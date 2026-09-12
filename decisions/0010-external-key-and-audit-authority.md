@@ -22,6 +22,11 @@ regular restore and reconciliation drills.
 
 The authority exposes narrow tombstone, key-status, receipt-append, and
 verification operations—never customer records or a general database API.
+Receipt creation follows an idempotent prepare/finalize protocol with a durable
+D1 intent between those phases. The destructive state change occurs only after
+finalization and receipt verification, in the same D1 transaction that completes
+the intent. Reconcilers abort unused reservations or finish finalized intents;
+protocol state distinguishes these from sequence tampering.
 
 ## Alternatives
 

@@ -243,6 +243,12 @@ privileged mutation. Removal, demotion, or role change advances it in the same
 transaction, and every mutation rechecks it at commit. Work authorized under an
 older generation cannot commit after access changes.
 
+Each administrative session also has its own monotonic generation captured by
+privileged work and rechecked at commit independently of the user's membership
+generation. Revoking or rotating one session advances that session generation,
+so an in-flight mutation authorized by the old session cannot commit even when
+the user and role remain otherwise valid.
+
 Provider secrets are encrypted before storage using a master key supplied by
 the deployment. This includes OAuth client secrets and refresh tokens, API keys,
 private keys, webhook secrets, and other provider credentials. Displays never
@@ -302,7 +308,11 @@ never a partially published backup. Each artifact has a canonical manifest that
 covers every database byte and recovery-relevant metadata byte and is
 authenticated by a key derived from or stored with the separately held recovery
 key. Restore verifies it before replacing state and rejects truncation,
-substitution, cross-installation use, and logically valid row tampering.
+substitution, cross-installation use, and logically valid row tampering. The
+complete standalone artifact—not only secrets or its manifest—is encrypted with
+an authenticated streaming encryption format under separately held recovery
+material before it can leave the host. Raw backup storage reveals neither user
+records, password verifiers, dashboards, normalized records, nor event history.
 
 A new installation cannot be claimed merely by reaching its public endpoint.
 The installer generates a high-entropy, single-use bootstrap capability and
@@ -393,12 +403,19 @@ organization's allocation.
 
 Operations audit storage is append-only at repository and database boundaries.
 No support, purge, retention, or tenant repository exposes update or delete for
-audit facts. Corrections append a linked superseding record. Each accepted audit
-commit obtains an externally sequenced authenticated receipt from the external
-key/operations authority before the operation is reported complete. The receipt
-binds tenant, sequence, record digest, and prior receipt; verification rejects
-rewritten D1 rows, a recomputed chain, gaps, and rollback. Availability failure
-fails closed for audited destructive operations.
+audit facts. Corrections append a linked superseding record. Audited destructive
+operations use a recoverable prepare/finalize protocol: the authority first
+reserves a sequence for the operation digest; D1 then commits an audit intent but
+does not apply the destructive transition; the authority finalizes its
+authenticated receipt only for that persisted intent; and a final D1 transaction
+verifies the receipt, applies the transition, and marks the intent complete.
+Retries are idempotent at every phase. Reserved sequences can be explicitly
+aborted, while finalized receipts and pending intents are reconciled until the
+final D1 transaction succeeds. Thus an authority failure cannot leave an applied
+but unreceipted destructive operation, and a D1 failure produces an inspectable,
+recoverable state rather than an unverifiable gap. The receipt binds tenant,
+sequence, operation digest, intent identifier, and prior receipt; verification
+rejects rewritten D1 rows, a recomputed chain, unexplained gaps, and rollback.
 
 Hosted per-tenant key status is held by a key authority outside shared customer
 D1 data and its backup lifecycle. Purge destroys tenant wrapping material and

@@ -98,6 +98,12 @@ DEK-rotation fault tests race writes and crashes through every rotation phase on
 SQLite and D1; no old-generation ciphertext can commit after cutover or become
 unreadable when the retired key is destroyed.
 
+Independent session-revocation races prove an in-flight privileged mutation
+cannot commit under a revoked or rotated session even while its user and role
+remain active. Raw standalone backup fixtures reveal no user data, password
+verifiers, dashboards, provider records, or event history without separately
+held recovery material.
+
 The cross-origin and missing, malformed, or mismatched CSRF-token matrix covers
 every session-authenticated state-changing route on both deployments, including
 dashboard, display, user, secret, provider, collector, action, import, export,
@@ -286,6 +292,11 @@ disaster-recovery tests fail destructive actions closed and reject rollback of
 its generation. Step-up tests enforce a five-minute,
 single-use assertion bound to actor, capability, target, request, and reason and
 reject stale, replayed, or substituted assertions.
+
+Fault injection at every audit prepare, intent, finalize, and apply boundary
+proves retries are idempotent, destructive state is never applied without its
+final receipt, reservations can be aborted, and finalized-but-unapplied intents
+are recoverable without unexplained sequence gaps.
 
 Raw pre-purge snapshot inspection proves all purge-sensitive tenant rows are
 ciphertext and remain unrecoverable after the external tombstone. Leaderboard
