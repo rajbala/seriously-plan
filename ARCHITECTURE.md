@@ -75,20 +75,30 @@ Provider data is normalized into typed records and events. Provider plugins do
 not own UI markup or receive unrestricted database access.
 
 Scheduled work and webhook deliveries are durable SQL rows. Workers claim a
-bounded number with expiring leases. Work is idempotent and resumable. The same
-job logic can be invoked by a systemd timer, cron, or Cloudflare Cron Trigger.
+bounded number with expiring leases. Every claim receives a monotonically
+increasing fencing token; commits from an expired or superseded claim are
+rejected. Work is idempotent and resumable, and external actions use their own
+idempotency keys where the provider supports them. The same job logic can be
+invoked by a systemd timer, cron, or Cloudflare Cron Trigger.
 
 Every dashboard-affecting transaction appends a monotonically ordered change
 event. SSE clients reconnect with `Last-Event-ID`. A persistent Node server can
 wake its in-memory listeners immediately; a stateless runtime can check the SQL
 event log while the SSE response remains open. Correctness never depends on an
-in-memory notification.
+in-memory notification. The stream reports the oldest retained event cursor. A
+missing, malformed, or older cursor causes an explicit full-snapshot
+reconciliation before incremental delivery resumes. Active streams periodically
+revalidate the display credential and dashboard assignment and close promptly
+after expiry, revocation, or reassignment.
 
 ## Provider model
 
 The provider SDK exposes metadata, configuration and credential schemas,
 health, synchronization, and optional actions. Providers receive scoped HTTP,
-secret, cursor, record, and logging capabilities.
+secret, synchronization-checkpoint, and logging capabilities. A checkpoint
+atomically commits idempotent record upserts, deletions, the next cursor, and
+the resulting change event. Providers cannot advance a cursor separately from
+the records it describes.
 
 Supported provider forms:
 
@@ -100,7 +110,9 @@ Supported provider forms:
 GitHub is the first remote provider. Codex and Claude Code begin as collectors
 because their useful state typically originates on developer workstations.
 Collectors do not upload prompts, source, terminal output, or conversation
-content by default.
+content by default. Each collector supplies a collector-scoped idempotency key
+and monotonically increasing sequence. Duplicate submissions are harmless and
+older out-of-order status updates cannot replace newer state.
 
 ## Authentication and secrets
 
@@ -114,6 +126,8 @@ Identity classes remain separate:
 Provider secrets are encrypted before storage using a master key supplied by
 the deployment. Displays never receive provider credentials. Display enrollment
 uses a short-lived code approved from an authenticated administrative browser.
+Redemption atomically consumes the code exactly once; concurrent redemption,
+reuse, expiry, and failed approval do not issue credentials.
 
 ## Hosted tenancy
 

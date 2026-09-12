@@ -83,8 +83,11 @@ Every public release performs:
 5. SBOM generation; and
 6. container-content inspection.
 
-Private CI additionally verifies that no private server package appears in a
-browser bundle.
+Private CI additionally builds an inventory of private server-only modules and
+verifies that none appears in any delivered JavaScript artifact or source map,
+including relative imports and embedded `sourcesContent`. Production browser
+source maps are not published unless they pass that inspection and their
+publication is intentional.
 
 ## Tenant isolation requirements
 
@@ -95,6 +98,13 @@ composite tenant-aware primary and foreign keys.
 All hosted repository contract tests create at least two tenants with identical
 resource IDs and prove that reads, updates, deletes, events, webhooks, jobs,
 exports, and caches cannot cross the boundary.
+
+Repository scoping is necessary but not sufficient. Request-level adversarial
+tests prove that hostname, slug, route, query, header, and body inputs cannot
+select a tenant without an authenticated membership or tenant-bound machine
+credential. These tests cover user routes, display snapshot and SSE routes,
+collector ingestion, provider callbacks, and webhook ingress. They also verify
+that conflicting tenant hints fail closed rather than selecting either tenant.
 
 ## Licensing decision gate
 

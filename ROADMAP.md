@@ -31,12 +31,17 @@ has no access to private source.
 - Dashboard and widget CRUD.
 - Responsive display route with kiosk presentation mode.
 - Display enrollment, revocation, and dashboard assignment.
-- Encrypted secret store and key-rotation groundwork.
+- Encrypted secret store, key rotation, and a documented master-key recovery
+  procedure.
 - Backup, restore, export, and import.
 
-**Exit gate:** a fresh container installation can enroll a browser, survive a
-restart, restore from backup, and expose no administrative capability through a
-display credential.
+**Exit gate:** the complete enrollment, persistence, authorization, restart,
+backup, and restore flow passes against both Node/SQLite and Workers/D1. A
+restored installation can decrypt a seeded secret after its master key is
+securely reintroduced. Concurrent, reused, expired, and unapproved enrollment
+codes fail to issue credentials. With two dashboards, a display credential can
+read only its assignment through loaders and resource routes and has no
+administrative capability.
 
 ## Phase 2 — provider platform and GitHub
 
@@ -45,14 +50,20 @@ data.
 
 - Versioned provider SDK and contract-test kit.
 - Provider configuration and credential schemas.
-- Normalized records, cursors, health, and synchronization.
-- SQL job leases, retries, and authenticated maintenance invocation.
+- Normalized records, atomic synchronization checkpoints, cursors, health, and
+  failure injection between checkpoint operations.
+- SQL job leases with fencing tokens, retries, and authenticated maintenance
+  invocation.
 - GitHub App authentication with least privilege.
 - Polling reconciliation; verified webhook inbox where externally reachable.
 - Pull-request, issue, repository, and workflow-run widgets.
 
-**Exit gate:** disconnects, duplicate webhooks, token revocation, and retries are
-covered by tests; a GitHub workflow change appears on an enrolled display.
+**Exit gate:** SQLite and D1 tests cover atomic record/cursor/event checkpoints,
+idempotent upserts, disconnects, duplicate webhooks, token revocation, and two
+workers racing across lease expiry; stale fencing tokens cannot commit. A seeded
+canary private key and token never appear in display-facing HTML, loader data,
+JSON, logs, or event payloads. A GitHub workflow change appears on an enrolled
+display.
 
 ## Phase 3 — live displays
 
@@ -63,10 +74,15 @@ covered by tests; a GitHub workflow change appears on an enrolled display.
 - Immediate in-process notifier for the Node deployment.
 - SQL event checks for stateless deployments.
 - Conditional-polling fallback and offline/reconnect UX.
-- Event retention and compaction.
+- Event retention and compaction with an explicit oldest-retained cursor and
+  full-snapshot reconciliation for stale or invalid cursors.
+- Periodic authorization and assignment revalidation for already-open streams.
 
-**Exit gate:** a display misses no update across Wi-Fi loss, Hub restart, Worker
-replacement, or event replay, and recovers without user intervention.
+**Exit gate:** a display misses no state change across Wi-Fi loss, Hub restart,
+Worker replacement, ordinary replay, or reconnection from a cursor older than
+retention. Revoking a credential or changing its dashboard assignment stops an
+already-open stream without waiting for the client to reconnect. Two-dashboard
+tests prove that snapshot and SSE access remain assignment-scoped.
 
 ## Phase 4 — Codex and Claude Code collectors
 
@@ -79,9 +95,13 @@ content by default.
 - Claude Code collector using the same normalized model.
 - Explicit privacy controls and redaction tests.
 - Collector health and last-seen status.
+- Collector-scoped idempotency keys and monotonic sequence handling.
 
 **Exit gate:** a workstation can report session state to either deployment; no
 prompt, source, terminal output, or transcript is transmitted by default.
+Duplicate and out-of-order submissions cannot regress state. Expired or revoked
+credentials, collector identity substitution, and unsupported record kinds are
+rejected on both deployments.
 
 ## Phase 5 — hosted private beta
 
@@ -94,10 +114,13 @@ prompt, source, terminal output, or transcript is transmitted by default.
 - Managed backup/export and hosted-to-self-hosted migration.
 - Operational audit log and separately authenticated support console.
 - Two-tenant adversarial isolation suite for every repository.
+- Request-boundary isolation tests for users, displays/SSE, collectors, provider
+  callbacks, and webhooks.
 
 **Exit gate:** automated tests demonstrate tenant isolation; a hosted tenant can
 export and restore into the open self-hosted edition; billing failure cannot
-erase or expose customer data.
+erase or expose customer data. A tenant-A identity cannot select tenant B using
+any hostname, slug, route, query, header, body, or conflicting tenant hint.
 
 ## Phase 6 — appliance integration and public launch
 
