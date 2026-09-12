@@ -49,7 +49,7 @@ interface PlatformServices {
   transactions: TransactionRunner;
   secrets: SecretStore;
   jobs: JobScheduler;
-  events: EventNotifier;
+  events: ChangeNotifier;
   crypto: CryptoProvider;
   clock: Clock;
 }
@@ -73,7 +73,8 @@ The portable substrate is:
 - a mechanism that periodically invokes an authenticated maintenance handler.
 
 Durable Objects, KV, R2, Queues, and Workflows are not architectural
-dependencies.
+dependencies. Durable Objects are the first hosted change-notification adapter,
+not a source of truth or a requirement for the public deployment.
 
 ## Data and job model
 
@@ -98,10 +99,28 @@ the Hub reconciles it through a provider read when possible or requires an
 audited user decision. It never blindly retries or falsely reports failure.
 
 Every dashboard-affecting transaction appends a monotonically ordered change
-event. SSE clients reconnect with `Last-Event-ID`. A persistent Node server can
-wake its in-memory listeners immediately; a stateless runtime can check the SQL
-event log while the SSE response remains open. Correctness never depends on an
-in-memory notification. The stream reports the oldest retained event cursor. A
+event to a transactional outbox in the same commit as the state change. An
+injected `ChangeNotifier` publishes only a scoped high-water notification; the
+durable SQL log remains authoritative, so lost, duplicated, delayed, and
+out-of-order notifications are harmless. Adapters expose typed `publish` and
+abortable `subscribe(scope, cursor)` operations and pass one contract suite.
+
+The first adapters are an immediate in-process notifier, an explicit
+database-poll notifier, and a hosted Durable Object notifier partitioned by
+organization or a documented organization shard. The Durable Object fans out
+notifications and may use hibernating WebSockets internally, but holds no
+irreplaceable state. PostgreSQL `LISTEN/NOTIFY`, Redis, or NATS adapters may be
+added later without changing domain or browser protocols. Production selects a
+notifier explicitly; adapter failure is observable and does not silently
+downgrade to polling. Database polling is the portable default and uses bounded,
+jittered idle intervals against the indexed outbox sequence.
+
+SSE remains the browser-facing protocol and clients reconnect with
+`Last-Event-ID`. A persistent Node server can wake listeners immediately; a
+stateless runtime uses its selected notifier while the SSE response remains
+open. On notification, timeout, and reconnect, the server reads authoritative
+events after the cursor. Correctness never depends on notification delivery.
+The stream reports the oldest retained event cursor. A
 missing, malformed, or older cursor causes an explicit full-snapshot
 reconciliation before incremental delivery resumes. Cursors are bound to the
 dashboard assignment and event-log generation; wrong-scope cursors and values
@@ -156,6 +175,11 @@ state is high entropy, expiring, single-use, and bound to the initiating user
 session, Seriously installation or tenant, and provider configuration. The
 GitHub App manifest is versioned and CI compares it with an explicit read-only
 permission allowlist, rejecting any additional write or administrative scope.
+All provider HTTP responses are streamed through the scoped broker under strict
+connect, first-byte, idle-read, and total deadlines; encoded and decoded byte
+ceilings; bounded redirects; and decompression-ratio limits. Slow, oversized,
+and compression-bomb responses terminate before exhausting a Worker or Node
+process and never produce a partial synchronization commit.
 
 ## Authentication and secrets
 
@@ -182,7 +206,12 @@ Argon2id verifiers produced by an audited cross-runtime implementation whose
 memory and time parameters meet a documented minimum and are periodically
 recalibrated. Passwords are never encrypted, logged, exported, or retained after
 verification. Optional WebAuthn credentials store public keys, never private key
-material.
+material. Each ceremony uses an expiring, cryptographically random, single-use
+server challenge bound to the session and intended operation. Assertion
+verification requires the expected RP ID, exact allowed origin, ceremony type,
+user presence, configured user verification, credential ownership, signature,
+and monotonic counter semantics; counter regressions follow an explicit
+cloned-authenticator policy rather than being ignored.
 
 Login verification is bounded by account, network source, and deployment-wide
 rate controls with increasing delays and generic responses. Limits cap expensive
@@ -191,7 +220,11 @@ attacker-triggered account lockout. A successful login rotates the session ID.
 Administrative sessions use host-only `Secure`, `HttpOnly`, appropriately
 `SameSite` cookies; credentials never enter URLs or Web Storage. Plain HTTP is
 permitted only by an explicit loopback development mode that cannot be enabled
-in production.
+in production. The server caps administrative sessions at 24 hours absolute and
+30 minutes idle; deployments may shorten but not extend those limits. Activity
+cannot extend the absolute deadline. Sensitive operations require authentication
+within the preceding five minutes, renewal rotates the session identifier, and
+clock-driven expiry behaves identically on Node and Workers.
 
 Session, display, collector, invitation, callback-state, and other bearer
 capabilities are high-entropy values disclosed once. Storage contains only a
@@ -200,7 +233,10 @@ authentication epoch, and revocation metadata—never the bearer value. Database
 and backup scans use canaries to enforce this for every credential class. A
 restore advances the installation or tenant authentication epoch and rotates all
 restored sessions and machine credentials, so credentials revoked after an old
-backup cannot become valid again.
+backup cannot become valid again. A credential generation held outside restored
+data also invalidates restored password and WebAuthn credentials. Recovery then
+requires an installer-authenticated owner credential reset; no restored verifier
+or authenticator can mint a current-generation session before that reset.
 
 User and membership authorization has a monotonic generation captured by each
 privileged mutation. Removal, demotion, or role change advances it in the same
@@ -239,7 +275,11 @@ key versions, and context mismatch fail closed without returning partial data.
 
 KEK versions permit rewrapping DEKs without rewriting every secret. DEK rotation
 creates a new version and incrementally re-encrypts credentials, retaining an
-old key only until migration is verified. Backup recovery treats key material
+old key only until migration is verified. Rotation first advances a key
+generation and installs a write barrier: every secret write compares that
+generation at commit and retries encryption under the active DEK if cutover has
+begun. Verification covers all rows committed through the barrier before an old
+key can be retired. Backup recovery treats key material
 separately: a database backup requires a separately protected recovery package
 or an externally retained KEK. A portable recovery package encrypts key material
 under a user-held recovery key; a passphrase option derives that key with a
@@ -258,7 +298,11 @@ backup/snapshot facility rather than copying database files; D1 uses its
 consistent backup/export primitive. The artifact represents one committed
 database boundary, including encryption metadata and required event/job state.
 A crash leaves either the prior complete artifact or the new complete artifact,
-never a partially published backup.
+never a partially published backup. Each artifact has a canonical manifest that
+covers every database byte and recovery-relevant metadata byte and is
+authenticated by a key derived from or stored with the separately held recovery
+key. Restore verifies it before replacing state and rejects truncation,
+substitution, cross-installation use, and logically valid row tampering.
 
 A new installation cannot be claimed merely by reaching its public endpoint.
 The installer generates a high-entropy, single-use bootstrap capability and
@@ -313,8 +357,11 @@ Tenant-owned D1 tables include `tenant_id` in primary keys, foreign keys,
 uniqueness constraints, cache keys, jobs, and change events. Hosted request code
 cannot obtain a raw D1 binding.
 
-An organization lifecycle state is checked at every request boundary and again
-when a leased job commits. Suspension or deletion disables memberships and all
+An organization lifecycle state and monotonic lifecycle generation are checked
+at every request boundary and rechecked at every tenant-bound commit and before
+publishing a long-running response, stream, or export. Leased jobs capture and
+recheck the same generation. Suspension or deletion atomically advances it and
+disables memberships and all
 tenant-bound display, collector, provider, webhook, and session credentials;
 in-flight work cannot commit after the transition. Recovery within the stated
 retention window restores access only through an explicit audited operation.
@@ -346,11 +393,12 @@ organization's allocation.
 
 Operations audit storage is append-only at repository and database boundaries.
 No support, purge, retention, or tenant repository exposes update or delete for
-audit facts. Corrections append a linked superseding record; integrity chaining
-or equivalent tamper evidence detects offline rewriting. Hosted authenticated
-audit checkpoints are periodically anchored in the external key/operations
-authority; verification rejects a D1 snapshot whose rows and internal chain were
-both rewritten and recomputed after the last anchor.
+audit facts. Corrections append a linked superseding record. Each accepted audit
+commit obtains an externally sequenced authenticated receipt from the external
+key/operations authority before the operation is reported complete. The receipt
+binds tenant, sequence, record digest, and prior receipt; verification rejects
+rewritten D1 rows, a recomputed chain, gaps, and rollback. Availability failure
+fails closed for audited destructive operations.
 
 Hosted per-tenant key status is held by a key authority outside shared customer
 D1 data and its backup lifecycle. Purge destroys tenant wrapping material and
@@ -358,6 +406,10 @@ appends a non-rollbackable tombstone there before customer rows are removed.
 Every unwrap and restore consults that authority; a pre-purge shared-D1 snapshot
 cannot restore a tombstoned key or make its ciphertext decryptable. Hosted
 backup tests restore pre-purge snapshots after retention and prove denial.
+Every purge-sensitive tenant row—including dashboards, normalized provider
+records, events, jobs, and exports—is encrypted under destructible per-tenant
+material, not merely provider-secret rows. Raw snapshot inspection after
+tombstoning must recover no customer content.
 
 ## Optional public usage leaderboard
 
@@ -379,8 +431,11 @@ and is never reused for Hub authentication.
 
 Hosted ingestion verifies registration, signature, schema, sequence, period,
 idempotency, revocation, body/time limits, and rate limits before accepting a
-report. Corrections are signed cumulative replacements for an open time bucket;
-closed periods are immutable. Public views use minimum aggregation thresholds
+report. Corrections are signed cumulative replacements for an open time bucket.
+Closing a period prevents score replacement but never prevents a privacy
+deletion. Deleting an operator's report removes it from retained and public data
+without reopening the bucket or permitting a corrected replacement. Public
+views use minimum aggregation thresholds
 and visibly distinguish reported, provider-verified, and hosted usage. Estimated
 spend is calculated centrally from a versioned public price catalog and labeled
 as estimated; negotiated discounts and unobservable spend are never guessed.

@@ -84,6 +84,20 @@ rechecks its user/membership generation at commit. Backups taken during writes
 or a simulated crash restore one complete pre-write or post-write point on
 SQLite and D1, including WAL-visible and cross-table state, never a torn mix.
 
+Backup authentication tests reject truncation, byte or metadata substitution,
+cross-installation replay, and structurally valid row tampering before replacing
+live state. Restore tests prove old password and WebAuthn credentials cannot mint
+a session until installer-authenticated recovery establishes new owner
+credentials. Clock-driven tests enforce administrative idle and absolute session
+deadlines, rotation on renewal, and recent-authentication bounds on both runtimes.
+WebAuthn fixtures reject reused or expired challenges, wrong RP IDs and origins,
+wrong ceremony types, absent required presence or verification, bad signatures,
+and counter rollback according to the cloned-authenticator policy.
+
+DEK-rotation fault tests race writes and crashes through every rotation phase on
+SQLite and D1; no old-generation ciphertext can commit after cutover or become
+unreadable when the retired key is destroyed.
+
 The cross-origin and missing, malformed, or mismatched CSRF-token matrix covers
 every session-authenticated state-changing route on both deployments, including
 dashboard, display, user, secret, provider, collector, action, import, export,
@@ -111,6 +125,11 @@ racing across lease expiry; stale fencing tokens cannot commit. Valid webhook
 signatures over the exact raw bytes enqueue once, while missing, malformed, and
 body-mismatched signatures enqueue nothing. Oversized and slow raw bodies are
 terminated under byte, time, and unauthenticated rate limits without enqueueing.
+Outbound broker fixtures reject private, loopback, link-local, metadata, rebound,
+and redirect-switched destinations unless a separately approved private-network
+capability applies. Slow streams, excessive redirects, encoded or decoded byte
+overruns, and compression bombs terminate within resource bounds on both
+deployments without a partial checkpoint.
 Authorization callback tests reject expired, replayed, session-mismatched,
 installation/tenant-mismatched, and configuration-mismatched state on both
 adapters. Multi-page fixtures cover every GitHub record kind and deletion from a
@@ -139,8 +158,11 @@ claiming work.
 
 - Durable SQL change-event log.
 - SSE resource route, heartbeats, cursors, and reconnect replay.
-- Immediate in-process notifier for the Node deployment.
-- SQL event checks for stateless deployments.
+- Public `ChangeNotifier` contract and loss/duplication/order contract suite.
+- Immediate in-process and explicit database-poll adapters.
+- Durable Object notifier as the first hosted adapter, partitioned by organization
+  or documented shard and containing no authoritative state.
+- SQL outbox checks after every hint, timeout, and reconnect.
 - Conditional-polling fallback and offline/reconnect UX.
 - Event retention and compaction with an explicit oldest-retained cursor and
   full-snapshot reconciliation for stale or invalid cursors.
@@ -161,6 +183,12 @@ Clock-driven tests prove expiry, revocation, and reassignment close an existing
 stream within 60 seconds on both deployments. Well-formed future and
 wrong-dashboard or wrong-generation cursors force a scoped snapshot instead of
 suppressing updates.
+Notifier contract tests drop, duplicate, delay, and reorder signals and restart
+the adapter while proving identical eventual state. Configuration explicitly
+selects the notifier; unavailable configured adapters fail observably instead of
+silently switching transports. Database-poll mode uses bounded jitter and an
+indexed sequence query, while the Lenovo maintains one SSE connection rather
+than polling resources itself.
 
 ## Phase 4 — Codex and Claude Code collectors
 
@@ -225,7 +253,10 @@ access. Concurrent leave, removal, demotion, and transfer requests preserve at
 least one owner on D1.
 
 Suspending or deleting an organization rejects every user and machine request
-boundary and prevents already-leased jobs from committing. Each enforced quota
+boundary and prevents already-leased jobs and in-flight non-job mutations from
+committing or publishing responses under the prior lifecycle generation.
+Collector ingestion, provider callbacks, administration, exports, and streams
+are raced against both transitions. Each enforced quota
 has below-limit, at-limit, over-limit, concurrent-consumption, and background-job
 tests; exhausting tenant A cannot deny service to tenant B. Operations tests
 cover every support capability, revocation, explicit tenant targeting, customer
@@ -249,10 +280,17 @@ Operations audit tests prove append-only enforcement at repository and storage
 boundaries: update/delete attempts fail for support identities, destructive
 operations, tenant purge, and retention jobs, while linked corrections preserve
 the original record and tamper evidence verifies. Rewritten and internally
-re-chained D1 snapshots fail against an authenticated checkpoint anchored in the
-external operations/key authority. Step-up tests enforce a five-minute,
+re-chained D1 snapshots, including alteration of the newest record, fail against
+per-commit externally sequenced authenticated receipts. Authority outage and
+disaster-recovery tests fail destructive actions closed and reject rollback of
+its generation. Step-up tests enforce a five-minute,
 single-use assertion bound to actor, capability, target, request, and reason and
 reject stale, replayed, or substituted assertions.
+
+Raw pre-purge snapshot inspection proves all purge-sensitive tenant rows are
+ciphertext and remain unrecoverable after the external tombstone. Leaderboard
+tests delete reports from closed periods from retained and public views without
+allowing score replacement or reopening the bucket.
 
 ## Phase 6 — appliance integration and public launch
 

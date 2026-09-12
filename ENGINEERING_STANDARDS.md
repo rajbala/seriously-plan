@@ -100,7 +100,16 @@ A local process receives a dedicated unprivileged identity, an empty allowlisted
 environment, no Hub database, secret, recovery, or host-filesystem mounts, a
 read-only executable image, bounded CPU, memory, process, and time resources,
 and no ambient network access. All outbound HTTP uses the host capability broker
-and its manifest allowlist. Linux deployments enforce namespaces, syscall
+and its manifest allowlist. The broker resolves through a trusted resolver,
+connects only to the validated address, rejects loopback, link-local, private,
+metadata, multicast, and otherwise prohibited destinations, and repeats policy
+validation for every redirect without forwarding credentials across origins.
+DNS answers are pinned for the connection to prevent rebinding. Intentional
+private-network access is a separate, prominently approved manifest capability
+with its own destination allowlist. Responses have strict connect, first-byte,
+idle-read, and total deadlines; encoded and decoded byte ceilings; bounded
+redirects; and streaming decompression-ratio limits. Linux deployments enforce
+namespaces, syscall
 filtering, and a disposable filesystem through the supported sandbox or OCI
 runner. If a host cannot provide the required isolation, it supports remote
 extensions only and fails local-process installation explicitly.
