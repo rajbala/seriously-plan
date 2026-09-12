@@ -129,6 +129,13 @@ uses a short-lived code approved from an authenticated administrative browser.
 Redemption atomically consumes the code exactly once; concurrent redemption,
 reuse, expiry, and failed approval do not issue credentials.
 
+A new installation cannot be claimed merely by reaching its public endpoint.
+The installer generates a high-entropy, single-use bootstrap capability and
+delivers it separately from the application URL (or provisions the first
+administrator locally). Claiming the first administrator and consuming that
+capability are one transaction. Once claimed, bootstrap endpoints remain
+disabled; competing and replayed claims fail without revealing account state.
+
 ## Hosted tenancy
 
 The public Hub models one installation. In the hosted product, an organization
@@ -144,16 +151,62 @@ short-lived, bound to an organization and intended identity, and recorded in
 the audit log. The last owner cannot leave or be removed; ownership must first
 be transferred or the organization must enter its deletion lifecycle.
 
+The initial role-to-capability policy is explicit:
+
+| Capability | Owner | Admin | Member | Viewer |
+|---|:---:|:---:|:---:|:---:|
+| View dashboards | yes | yes | yes | yes |
+| Edit dashboards and widgets | yes | yes | yes | no |
+| Operate existing integrations | yes | yes | yes | no |
+| View or change integration settings and credentials | yes | yes | no | no |
+| Enroll or revoke displays and collectors | yes | yes | no | no |
+| Invite, remove, or change members below owner | yes | yes | no | no |
+| Grant or revoke owner; transfer ownership | yes | no | no | no |
+| Manage billing, exports, deletion, and organization settings | yes | no | no | no |
+
+Every route authorizes a named capability. Role assignment cannot grant a
+capability that the acting identity does not possess. Owner-count validation
+and membership mutation occur in one serialized transaction so concurrent
+leave, removal, demotion, and ownership-transfer requests cannot produce an
+organization with zero owners.
+
 The private hosted Worker resolves a global authenticated identity, verifies
 membership in the selected organization, and constructs organization-scoped
 repositories before entering shared domain and route code. Organization
 selection supports users who belong to more than one organization, but URL,
 hostname, cookie, header, and body hints never establish authorization.
 
-Hosted D1 tables include `tenant_id` in primary keys, foreign keys, uniqueness
-constraints, cache keys, jobs, and change events. Hosted request code cannot
-obtain a raw D1 binding. Cross-tenant operations use separate private operational
-interfaces and authentication.
+Global identity tables use stable user keys and do not carry `tenant_id`.
+Membership is the explicit join from a global user key to an organization key.
+Tenant-owned D1 tables include `tenant_id` in primary keys, foreign keys,
+uniqueness constraints, cache keys, jobs, and change events. Hosted request code
+cannot obtain a raw D1 binding.
+
+An organization lifecycle state is checked at every request boundary and again
+when a leased job commits. Suspension or deletion disables memberships and all
+tenant-bound display, collector, provider, webhook, and session credentials;
+in-flight work cannot commit after the transition. Recovery within the stated
+retention window restores access only through an explicit audited operation.
+After that window, a clock-driven purge irreversibly removes customer records,
+encrypted credentials, per-tenant key material, exports, and recoverable backup
+material. Only narrowly documented audit or legal-retention records may remain,
+and they contain no recoverable customer secrets or dashboard content.
+
+Cross-tenant operations use a separate private interface, identity store, and
+session boundary. Operations roles grant named, revocable capabilities such as
+tenant lookup, support diagnostics, suspension, export authorization, or purge
+authorization. Every action requires explicit tenant targeting, reason and
+ticket metadata, step-up authentication for destructive operations, and an
+immutable audit record. Customer sessions and operations identities without the
+specific capability are rejected.
+
+Plans define tenant limits for stored bytes, active displays and collectors,
+provider synchronizations, ingestion requests, queued/running jobs, and outbound
+event delivery. Admission reserves capacity atomically with the accepted write
+or job claim, so concurrent requests cannot oversubscribe a limit. Rejected work
+does not consume capacity, and quota counters are reconciled from authoritative
+tenant-owned records. Enforcement is tenant-local and cannot consume another
+organization's allocation.
 
 The hosted edition starts with one shared D1 database and may later use a fixed
 set of D1 shards. Database-per-customer and platform-specific coordination are

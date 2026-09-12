@@ -116,6 +116,17 @@ revocation, last-owner protection, ownership transfer, and deletion. Removing a
 membership invalidates its active sessions and access without affecting the
 same user's memberships in other organizations.
 
+Global identity tables are exempt from tenant-key requirements. Memberships
+join stable global user IDs to organization IDs; every other tenant-owned table
+uses tenant-aware keys and constraints. Contract tests prove that this model
+preserves one identity across organizations without weakening tenant isolation.
+
+The private operations interface never reuses customer authentication or raw
+tenant repositories. Its repositories require an explicitly authorized target
+tenant plus an operations capability and audit context. Boundary tests reject
+customer sessions, revoked operations identities, missing or mismatched tenant
+targets, and every capability escalation.
+
 ## Licensing decision gate
 
 Before accepting external contributions, choose and document either:

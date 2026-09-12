@@ -26,7 +26,7 @@ has no access to private source.
 
 **Outcome:** a self-hosted user can configure and display persisted dashboards.
 
-- Installation bootstrap and first administrator.
+- Installer-bound, single-use installation bootstrap and first administrator.
 - Session authentication and CSRF protection.
 - Dashboard and widget CRUD.
 - Responsive display route with kiosk presentation mode.
@@ -41,7 +41,10 @@ restored installation can decrypt a seeded secret after its master key is
 securely reintroduced. Concurrent, reused, expired, and unapproved enrollment
 codes fail to issue credentials. With two dashboards, a display credential can
 read only its assignment through loaders and resource routes and has no
-administrative capability.
+administrative capability. An unauthenticated attacker cannot claim a reachable
+fresh installation: attacker-first, replay, and concurrent first-administrator
+requests prove the installer-generated bootstrap capability is consumed
+atomically and the claim endpoint is permanently disabled afterward.
 
 ## Phase 2 — provider platform and GitHub
 
@@ -128,9 +131,22 @@ erase or expose customer data. A tenant-A identity cannot select tenant B using
 any hostname, slug, route, query, header, body, or conflicting tenant hint. A
 user can create and switch organizations and hold different roles in each.
 Single-use, expiring, identity-bound invitations and all role transitions are
-tested. Removal terminates existing access, the last owner cannot be removed,
-and ownership transfer and organization deletion are auditable and recoverable
-according to the documented retention policy.
+tested. Request-level allow/deny tests cover every capability in the documented
+role matrix, including one user with different roles across organizations and
+attempts to grant capabilities the actor lacks. Removal terminates existing
+access. Concurrent leave, removal, demotion, and transfer requests preserve at
+least one owner on D1.
+
+Suspending or deleting an organization rejects every user and machine request
+boundary and prevents already-leased jobs from committing. Each enforced quota
+has below-limit, at-limit, over-limit, concurrent-consumption, and background-job
+tests; exhausting tenant A cannot deny service to tenant B. Operations tests
+cover every support capability, revocation, explicit tenant targeting, customer
+session rejection, insufficient operations privilege, step-up requirements, and
+audit creation. Clock-driven deletion tests prove recovery during retention and
+irreversible purge afterward, including customer data, secrets, exports, and
+recoverable backups, while validating the documented non-secret audit or legal
+exceptions.
 
 ## Phase 6 — appliance integration and public launch
 
