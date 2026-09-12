@@ -96,6 +96,15 @@ internals. Bundled in-process extensions are reviewed. Community-installed
 untrusted code runs remotely or in a sandboxed supervised process; the hosted
 Worker never dynamically executes third-party packages.
 
+A local process receives a dedicated unprivileged identity, an empty allowlisted
+environment, no Hub database, secret, recovery, or host-filesystem mounts, a
+read-only executable image, bounded CPU, memory, process, and time resources,
+and no ambient network access. All outbound HTTP uses the host capability broker
+and its manifest allowlist. Linux deployments enforce namespaces, syscall
+filtering, and a disposable filesystem through the supported sandbox or OCI
+runner. If a host cannot provide the required isolation, it supports remote
+extensions only and fails local-process installation explicitly.
+
 Normalized records and host-owned queries keep widgets independent of provider
 APIs. Extensions cannot add arbitrary server routes or executable markup.
 Widget code uses a separate browser SDK, restrictive Content Security Policy,

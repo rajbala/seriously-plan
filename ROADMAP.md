@@ -66,6 +66,15 @@ backup advances the authentication epoch: all pre-restore sessions and machine
 credentials remain rejected and new credentials are explicitly issued on both
 adapters. Database and backup canaries prove raw session, display, collector,
 invitation, callback-state, and other bearer values are never stored.
+Password canaries prove only unique salts and policy-compliant Argon2id
+verifiers are stored on both adapters; login, migration, parameter upgrade, and
+malformed-verifier tests fail safely. Concurrent removal, self-demotion, and
+transfer preserve at least one standalone owner atomically on SQLite and D1.
+Enrollment tests prove an approved human-readable code cannot redeem without
+the initiating display's separate high-entropy device secret. A restore racing
+with mutations and leased jobs advances an external generation and rejects every
+pre-restore commit on both adapters.
+
 Cross-origin and missing, malformed, or mismatched CSRF-token
 requests cannot mutate dashboards, displays, users, or secrets on either
 deployment.
@@ -109,6 +118,11 @@ neither administrative nor display views. The complete GitHub authorization-
 through-workflow-change-to-display scenario passes against both Node/SQLite and
 Workers/D1.
 
+HTTP maintenance triggers require narrow, revocable, hashed credentials and are
+rate bounded. Request-level tests for systemd/cron and Worker shapes reject
+missing, invalid, revoked, expired, and incorrectly scoped credentials without
+claiming work.
+
 ## Phase 3 — live displays
 
 **Outcome:** healthy clients receive updates without polling.
@@ -133,6 +147,10 @@ tests prove that snapshot and SSE access remain assignment-scoped.
 With SSE disabled or broken, conditional polling on both deployments handles
 unchanged validators, concurrent updates, authorization or assignment changes,
 and recovery to streaming without missing or exposing state.
+Clock-driven tests prove expiry, revocation, and reassignment close an existing
+stream within 60 seconds on both deployments. Well-formed future and
+wrong-dashboard or wrong-generation cursors force a scoped snapshot instead of
+suppressing updates.
 
 ## Phase 4 — Codex and Claude Code collectors
 
@@ -153,6 +171,11 @@ prompt, source, terminal output, or transcript is transmitted by default.
 Duplicate and out-of-order submissions cannot regress state. Expired or revoked
 credentials, collector identity substitution, and unsupported record kinds are
 rejected on both deployments.
+
+Collector streams have byte and read-time limits, bounded batch counts,
+per-collector request rates, and configurable standalone retention/storage
+ceilings. Both adapters reject oversized, slow, over-batch, over-rate, and
+over-retention submissions without partial ingestion.
 
 Leaderboard tests prove reporting is disabled by default; payload previews and
 captured traffic contain only consented aggregates; signatures, sequences,
@@ -202,6 +225,10 @@ irreversible purge afterward, including customer data, secrets, exports, and
 recoverable backups, while validating the documented non-secret audit or legal
 exceptions.
 
+Restoring a shared D1 snapshot from before a completed purge cannot unwrap or
+recover the tenant because the external key authority retains a non-rollbackable
+tombstone; this is tested after the retention deadline.
+
 Operations audit tests prove append-only enforcement at repository and storage
 boundaries: update/delete attempts fail for support identities, destructive
 operations, tenant purge, and retention jobs, while linked corrections preserve
@@ -227,7 +254,11 @@ preserve dashboards, encrypted credentials, sessions subject to authentication
 epoch policy, jobs, extension configuration, and protocol compatibility. Each
 adapter has an exercised rollback or roll-forward recovery procedure. A new
 community provider and widget built from the scaffold pass the conformance and
-quality gates without importing Hub internals.
+quality gates without importing Hub internals. A hostile local-process extension
+cannot read Hub data, inherited environment or recovery keys, escape its
+filesystem, identity, or resource limits, or contact undeclared network
+destinations; hosts lacking the required sandbox reject local-process
+installation.
 
 ## Deferred until justified
 

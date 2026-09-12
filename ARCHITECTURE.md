@@ -103,9 +103,13 @@ wake its in-memory listeners immediately; a stateless runtime can check the SQL
 event log while the SSE response remains open. Correctness never depends on an
 in-memory notification. The stream reports the oldest retained event cursor. A
 missing, malformed, or older cursor causes an explicit full-snapshot
-reconciliation before incremental delivery resumes. Active streams periodically
-revalidate the display credential and dashboard assignment and close promptly
-after expiry, revocation, or reassignment.
+reconciliation before incremental delivery resumes. Cursors are bound to the
+dashboard assignment and event-log generation; wrong-scope cursors and values
+beyond the current high-water mark are invalid and also force reconciliation.
+Active streams revalidate the display credential and dashboard assignment at
+least every 60 seconds and before delivering data after an authorization-change
+notification. Expiry, revocation, or reassignment closes the stream within that
+maximum interval.
 
 Snapshot reconciliation has a transactional event boundary. The server reads a
 dashboard snapshot and its event high-water mark from one consistent database
@@ -169,7 +173,16 @@ integrations, collectors, displays, and dashboards; member can operate existing
 integrations and edit dashboards; viewer is read-only. Every privileged route
 checks a named capability, and an actor cannot grant a capability it lacks.
 Installation invitations are short-lived, identity-bound, atomically single-use,
-and audited.
+and audited. Owner-count validation and mutation share a serialized transaction;
+the final owner cannot leave, be removed, or demote itself without an atomic
+ownership transfer.
+
+Standalone password authentication stores only unique salts and versioned
+Argon2id verifiers produced by an audited cross-runtime implementation whose
+memory and time parameters meet a documented minimum and are periodically
+recalibrated. Passwords are never encrypted, logged, exported, or retained after
+verification. Optional WebAuthn credentials store public keys, never private key
+material.
 
 Session, display, collector, invitation, callback-state, and other bearer
 capabilities are high-entropy values disclosed once. Storage contains only a
@@ -187,6 +200,11 @@ receive provider credentials. Display enrollment uses a short-lived code
 approved from an authenticated administrative browser. Redemption atomically
 consumes the code exactly once; concurrent redemption, reuse, expiry, and failed
 approval do not issue credentials.
+
+The display first creates a separate high-entropy device secret and sends only
+its verifier with the enrollment request. Administrative approval binds the
+human-readable code to that verifier; redemption requires proof of the device
+secret, so the code alone is useless.
 
 Secrets use envelope encryption. Each installation, or each organization in the
 hosted edition, has a random data-encryption key (DEK). Secrets are encrypted
@@ -214,6 +232,12 @@ under a user-held recovery key; a passphrase option derives that key with a
 versioned memory-hard KDF and recorded salt and work parameters. Restore tests
 decrypt a canary only after that material is deliberately reintroduced; deletion
 purges wrapped DEKs and all recoverable copies according to retention policy.
+
+Restore is a maintenance-barrier operation with a monotonically increasing
+restore generation held outside the replaced data. New mutations and job claims
+pause during replacement, and every in-flight mutation and job commit rechecks
+the generation. Work authorized against the pre-restore generation cannot write
+into restored state.
 
 A new installation cannot be claimed merely by reaching its public endpoint.
 The installer generates a high-entropy, single-use bootstrap capability and
@@ -298,6 +322,13 @@ Operations audit storage is append-only at repository and database boundaries.
 No support, purge, retention, or tenant repository exposes update or delete for
 audit facts. Corrections append a linked superseding record; integrity chaining
 or equivalent tamper evidence detects offline rewriting.
+
+Hosted per-tenant key status is held by a key authority outside shared customer
+D1 data and its backup lifecycle. Purge destroys tenant wrapping material and
+appends a non-rollbackable tombstone there before customer rows are removed.
+Every unwrap and restore consults that authority; a pre-purge shared-D1 snapshot
+cannot restore a tombstoned key or make its ciphertext decryptable. Hosted
+backup tests restore pre-purge snapshots after retention and prove denial.
 
 ## Optional public usage leaderboard
 
