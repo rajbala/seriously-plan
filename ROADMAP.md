@@ -12,6 +12,10 @@ tested public/private dependency boundary.
 - Scaffold React Router v7, TypeScript, pnpm, linting, Vitest, and Playwright.
 - Establish public package boundaries and server/client import rules.
 - Define domain IDs, clock, crypto, database, secret, and job contracts.
+- Establish purpose-specific database ports and one SQLite/D1 contract suite.
+- Establish canonical wire schemas and monorepo-managed client SDK packages.
+- Define extension manifests, capability boundaries, scaffold tooling, local
+  harness, conformance tests, and the machine-readable quality checklist.
 - Build a minimal Node/SQLite self-hosted app.
 - Build a minimal single-tenant Workers/D1 app.
 - Publish a versioned public package consumed by `seriously-cloud`.
@@ -20,15 +24,18 @@ tested public/private dependency boundary.
 
 **Exit gate:** one public page and health resource route run from Node/SQLite and
 Workers/D1; the private Worker consumes a pinned public package; clean public CI
-has no access to private source.
+has no access to private source. Import-boundary and artifact checks enforce the
+engineering standards; SQLite and D1 pass the same initial database contracts;
+generated/shared SDK validators pass cross-version fixtures; and a scaffolded
+reference extension passes its conformance and quality gates.
 
 ## Phase 1 — useful standalone dashboard
 
 **Outcome:** a self-hosted user can configure and display persisted dashboards.
 
 - Installer-bound, single-use installation bootstrap and first administrator.
-- Installation-level user invitations, capability roles, removal, and session
-  revocation for additional self-hosted users.
+- Installation-level owner, admin, member, and viewer capability roles;
+  identity-bound, expiring, atomic invitations; removal; and session revocation.
 - Session authentication and CSRF protection.
 - Dashboard and widget CRUD.
 - Responsive display route with kiosk presentation mode.
@@ -48,12 +55,18 @@ expired, and unapproved enrollment codes fail to issue credentials. With two
 dashboards, a display credential can read only its assignment through loaders
 and resource routes and has no administrative capability. An unauthenticated
 attacker cannot claim a reachable fresh installation: attacker-first, replay,
-and concurrent first-administrator
-requests prove the installer-generated bootstrap capability is consumed
+and concurrent first-administrator requests prove the installer-generated
+bootstrap capability is consumed
 atomically and the claim endpoint is permanently disabled afterward. A second
 user can be invited, receives only the assigned installation capabilities, and
-loses both new and active-session access when removed on Node/SQLite and
-Workers/D1. Cross-origin and missing, malformed, or mismatched CSRF-token
+loses both new and active-session access when removed. Request-level allow/deny
+tests cover every standalone role capability on both adapters. Wrong-identity,
+expired, replayed, and concurrently redeemed invitations fail. Restoring an old
+backup advances the authentication epoch: all pre-restore sessions and machine
+credentials remain rejected and new credentials are explicitly issued on both
+adapters. Database and backup canaries prove raw session, display, collector,
+invitation, callback-state, and other bearer values are never stored.
+Cross-origin and missing, malformed, or mismatched CSRF-token
 requests cannot mutate dashboards, displays, users, or secrets on either
 deployment.
 
@@ -77,13 +90,24 @@ idempotent upserts, disconnects, duplicate webhooks, token revocation, bounded
 backoff, terminal failures, maximum attempts, dead-lettering, and two workers
 racing across lease expiry; stale fencing tokens cannot commit. Valid webhook
 signatures over the exact raw bytes enqueue once, while missing, malformed, and
-body-mismatched signatures enqueue nothing. Multi-page fixtures cover every
-GitHub record kind and deletion from a later page. CI rejects any GitHub App
+body-mismatched signatures enqueue nothing. Oversized and slow raw bodies are
+terminated under byte, time, and unauthenticated rate limits without enqueueing.
+Authorization callback tests reject expired, replayed, session-mismatched,
+installation/tenant-mismatched, and configuration-mismatched state on both
+adapters. Multi-page fixtures cover every GitHub record kind and deletion from a
+later page. CI rejects any GitHub App
 permission outside the documented read-only allowlist. With webhooks suppressed,
-scheduled polling discovers updates and deletions. A seeded canary private key
-and token never appear in display-facing HTML, loader data, JSON, logs, or event
-payloads. The complete GitHub authorization-through-workflow-change-to-display
-scenario passes against both Node/SQLite and Workers/D1.
+scheduled polling discovers updates and deletions. Polling and webhook jobs that
+start from the same provider state cannot commit out of generation order on
+SQLite or D1. Indeterminate external actions reconcile or require an audited
+decision and are never automatically retried without enforceable idempotency. A
+seeded canary private key and token never appear in any administrative or display
+HTML, loader, action, JSON, error, log, event, diagnostics, telemetry, or export
+path that can touch provider configuration. Hostile provider fixtures include
+HTML, SVG, event handlers, Markdown, and unsafe URL schemes and execute in
+neither administrative nor display views. The complete GitHub authorization-
+through-workflow-change-to-display scenario passes against both Node/SQLite and
+Workers/D1.
 
 ## Phase 3 — live displays
 
@@ -106,6 +130,10 @@ neither. Revoking a credential or changing its dashboard assignment stops an
 already-open stream without waiting for the client to reconnect. Two-dashboard
 tests prove that snapshot and SSE access remain assignment-scoped.
 
+With SSE disabled or broken, conditional polling on both deployments handles
+unchanged validators, concurrent updates, authorization or assignment changes,
+and recovery to streaming without missing or exposing state.
+
 ## Phase 4 — Codex and Claude Code collectors
 
 **Outcome:** users can see selected coding-agent activity without exposing work
@@ -118,12 +146,19 @@ content by default.
 - Explicit privacy controls and redaction tests.
 - Collector health and last-seen status.
 - Collector-scoped idempotency keys and monotonic sequence handling.
+- Opt-in aggregate token metering and signed self-hosted leaderboard reporting.
 
 **Exit gate:** a workstation can report session state to either deployment; no
 prompt, source, terminal output, or transcript is transmitted by default.
 Duplicate and out-of-order submissions cannot regress state. Expired or revoked
 credentials, collector identity substitution, and unsupported record kinds are
 rejected on both deployments.
+
+Leaderboard tests prove reporting is disabled by default; payload previews and
+captured traffic contain only consented aggregates; signatures, sequences,
+idempotency, correction windows, revocation, deletion, rate limits, and hostile
+payloads are enforced. Hosted, provider-verified, and self-reported entries are
+visibly distinct, and estimated spend identifies its versioned price snapshot.
 
 ## Phase 5 — hosted private beta
 
@@ -167,6 +202,11 @@ irreversible purge afterward, including customer data, secrets, exports, and
 recoverable backups, while validating the documented non-secret audit or legal
 exceptions.
 
+Operations audit tests prove append-only enforcement at repository and storage
+boundaries: update/delete attempts fail for support identities, destructive
+operations, tenant purge, and retention jobs, while linked corrections preserve
+the original record and tamper evidence verifies.
+
 ## Phase 6 — appliance integration and public launch
 
 **Outcome:** the Lenovo image becomes an enrollable Seriously display and the
@@ -177,9 +217,17 @@ projects are supportable by new users.
 - Pin and verify a released Seriously display artifact in the Lenovo build.
 - Publish installation, threat-model, privacy, backup, and recovery guides.
 - Establish version support, vulnerability reporting, and release cadence.
+- Publish and enforce the extension manifest, scaffold, conformance kit, quality
+  checklist, managed SDK support policy, and database adapter contract.
 
 **Exit gate:** a new user can deploy a Hub, connect GitHub, enroll a Lenovo, and
-recover both Hub and display using only published documentation.
+recover both Hub and display using only published documentation. Release-upgrade
+tests start from every supported prior version on Node/SQLite and Workers/D1 and
+preserve dashboards, encrypted credentials, sessions subject to authentication
+epoch policy, jobs, extension configuration, and protocol compatibility. Each
+adapter has an exercised rollback or roll-forward recovery procedure. A new
+community provider and widget built from the scaffold pass the conformance and
+quality gates without importing Hub internals.
 
 ## Deferred until justified
 

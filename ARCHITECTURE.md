@@ -45,7 +45,8 @@ Domain, UI, and provider code depend on injected capabilities:
 
 ```ts
 interface PlatformServices {
-  database: Database;
+  repositories: RepositoryFactory;
+  transactions: TransactionRunner;
   secrets: SecretStore;
   jobs: JobScheduler;
   events: EventNotifier;
@@ -56,6 +57,11 @@ interface PlatformServices {
 
 They do not import SQLite drivers, D1 bindings, `node:fs`, child processes, or
 Cloudflare-specific APIs. Deployment adapters may use those facilities.
+
+Repositories are purpose-specific domain ports, not a generic SQL or query
+escape hatch. SQLite and D1 adapters share a contract suite for transaction,
+ordering, concurrency, pagination, and failure semantics. A new database adapter
+must pass that suite without changes to domain or extension code.
 
 The portable substrate is:
 
@@ -85,6 +91,12 @@ terminal immediately. Exhausted work moves to an inspectable dead-letter state
 and cannot starve newly eligible jobs. The same job logic can be invoked by a
 systemd timer, cron, or Cloudflare Cron Trigger.
 
+Automatic retries of externally mutating actions require an enforceable
+provider or Seriously idempotency mechanism. If a connection fails after an
+unprotected action may have been accepted, the outcome becomes `indeterminate`:
+the Hub reconciles it through a provider read when possible or requires an
+audited user decision. It never blindly retries or falsely reports failure.
+
 Every dashboard-affecting transaction appends a monotonically ordered change
 event. SSE clients reconnect with `Last-Event-ID`. A persistent Node server can
 wake its in-memory listeners immediately; a stateless runtime can check the SQL
@@ -108,7 +120,11 @@ health, synchronization, and optional actions. Providers receive scoped HTTP,
 secret, synchronization-checkpoint, and logging capabilities. A checkpoint
 atomically commits idempotent record upserts, deletions, the next cursor, and
 the resulting change event. Providers cannot advance a cursor separately from
-the records it describes.
+the records it describes. Each provider configuration also owns a monotonic
+synchronization generation. Checkpoint commit uses compare-and-swap against that
+generation, so distinct polling and webhook jobs cannot commit stale snapshots
+or move a cursor backward; adapters may instead serialize one synchronization
+per configuration while preserving the same contract.
 
 Supported provider forms:
 
@@ -129,9 +145,13 @@ requests, issues, and workflow runs. Scheduled reconciliation remains the source
 of correctness when webhooks are delayed or lost and detects both updates and
 deletions. Webhook ingress authenticates the exact raw request bytes before
 parsing or enqueueing; missing, malformed, or body-mismatched signatures fail
-closed. The GitHub App manifest is versioned and CI compares it with an explicit
-read-only permission allowlist, rejecting any additional write or administrative
-scope.
+closed. Raw streams are consumed under configured byte and read-time limits,
+plus unauthenticated source and global rate limits, before memory is committed;
+oversized or slow bodies are terminated without enqueueing. GitHub authorization
+state is high entropy, expiring, single-use, and bound to the initiating user
+session, Seriously installation or tenant, and provider configuration. The
+GitHub App manifest is versioned and CI compares it with an explicit read-only
+permission allowlist, rejecting any additional write or administrative scope.
 
 ## Authentication and secrets
 
@@ -141,6 +161,24 @@ Identity classes remain separate:
 - displays can only read assigned dashboards;
 - collectors can only submit allowed record kinds;
 - providers have narrowly scoped external credentials.
+
+The standalone installation uses capability-based `owner`, `admin`, `member`,
+and `viewer` roles. Owner can manage users, role ownership, backup/restore, and
+installation settings; owner and admin can manage provider secrets,
+integrations, collectors, displays, and dashboards; member can operate existing
+integrations and edit dashboards; viewer is read-only. Every privileged route
+checks a named capability, and an actor cannot grant a capability it lacks.
+Installation invitations are short-lived, identity-bound, atomically single-use,
+and audited.
+
+Session, display, collector, invitation, callback-state, and other bearer
+capabilities are high-entropy values disclosed once. Storage contains only a
+keyed or cryptographic verifier plus a non-secret lookup prefix, scope, expiry,
+authentication epoch, and revocation metadata—never the bearer value. Database
+and backup scans use canaries to enforce this for every credential class. A
+restore advances the installation or tenant authentication epoch and rotates all
+restored sessions and machine credentials, so credentials revoked after an old
+backup cannot become valid again.
 
 Provider secrets are encrypted before storage using a master key supplied by
 the deployment. This includes OAuth client secrets and refresh tokens, API keys,
@@ -255,6 +293,49 @@ or job claim, so concurrent requests cannot oversubscribe a limit. Rejected work
 does not consume capacity, and quota counters are reconciled from authoritative
 tenant-owned records. Enforcement is tenant-local and cannot consume another
 organization's allocation.
+
+Operations audit storage is append-only at repository and database boundaries.
+No support, purge, retention, or tenant repository exposes update or delete for
+audit facts. Corrections append a linked superseding record; integrity chaining
+or equivalent tamper evidence detects offline rewriting.
+
+## Optional public usage leaderboard
+
+The hosted service publishes separate leaderboards for hosted verified usage
+and opt-in self-hosted reported usage. Self-hosted totals are never described as
+verified unless backed by a provider-issued cryptographic receipt or an
+authoritative read-only usage API. Signed transport proves which registered
+installation sent a report; an open-source operator can still alter its meter.
+
+The public Hub includes an optional publisher in the managed client SDK.
+Enabling it requires informed consent and a chosen public alias. The installation
+generates an Ed25519 key pair, registers the public key through a challenge, and
+signs canonical versioned reports containing a pseudonymous installation ID,
+monotonic sequence, time bucket, and aggregate input, output, and cache tokens by
+provider and model. Reports exclude prompts, transcripts, source, repository
+names, user identities, credentials, session identifiers, and file paths.
+The private signing key is stored through the envelope-encrypted `SecretStore`
+and is never reused for Hub authentication.
+
+Hosted ingestion verifies registration, signature, schema, sequence, period,
+idempotency, revocation, body/time limits, and rate limits before accepting a
+report. Corrections are signed cumulative replacements for an open time bucket;
+closed periods are immutable. Public views use minimum aggregation thresholds
+and visibly distinguish reported, provider-verified, and hosted usage. Estimated
+spend is calculated centrally from a versioned public price catalog and labeled
+as estimated; negotiated discounts and unobservable spend are never guessed.
+
+Leaderboard eligibility is separate from report acceptance. A reported entry
+must bind to an abuse-controlled hosted account, and one account cannot create
+unbounded ranked identities. Provider evidence is verified independently and
+bound to the same bucket. Anomaly detection can quarantine a score for review
+but cannot silently rewrite it. No self-reported score competes in a verified
+ranking.
+
+Operators can preview the exact payload, disable reporting immediately, rotate
+or revoke the reporting identity, delete the alias and retained reports, and
+export their history. The signing key grants only report submission for its
+registered installation and is never a Hub administration credential.
 
 The hosted edition starts with one shared D1 database and may later use a fixed
 set of D1 shards. Database-per-customer and platform-specific coordination are

@@ -15,6 +15,7 @@ plan of Seriously.
 - [Product and architecture](ARCHITECTURE.md)
 - [Public/private repository boundary](REPOSITORY_BOUNDARIES.md)
 - [Delivery roadmap](ROADMAP.md)
+- [Engineering and extension standards](ENGINEERING_STANDARDS.md)
 - [Pull-request and Codex review process](PR_PROCESS.md)
 - [Initial decision records](decisions/README.md)
 
