@@ -17,7 +17,8 @@ monorepo containing both source trees.
 The public repository contains:
 
 - complete single-installation Hub and responsive web UI;
-- multiple users, dashboards, displays, and integrations;
+- multiple installation users with invitations, capability-based authorization,
+  removal and session revocation, plus dashboards, displays, and integrations;
 - provider and widget SDKs;
 - official providers and collectors;
 - authentication, encryption, backup, restore, import, and export;
@@ -90,6 +91,12 @@ verifies that none appears in any delivered JavaScript artifact or source map,
 including relative imports and embedded `sourcesContent`. Production browser
 source maps are not published unless they pass that inspection and their
 publication is intentional.
+
+Envelope encryption is public infrastructure, not a hosted-only feature. The
+public repository owns the portable `SecretStore` contract, authenticated
+encryption format, wrapping and rotation workflows, recovery-package format,
+and leakage tests. The private repository supplies only the hosted KEK source,
+per-organization key lifecycle, audit integration, and operational policy.
 
 ## Tenant isolation requirements
 

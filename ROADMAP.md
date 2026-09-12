@@ -27,6 +27,8 @@ has no access to private source.
 **Outcome:** a self-hosted user can configure and display persisted dashboards.
 
 - Installer-bound, single-use installation bootstrap and first administrator.
+- Installation-level user invitations, capability roles, removal, and session
+  revocation for additional self-hosted users.
 - Session authentication and CSRF protection.
 - Dashboard and widget CRUD.
 - Responsive display route with kiosk presentation mode.
@@ -38,13 +40,22 @@ has no access to private source.
 **Exit gate:** the complete enrollment, persistence, authorization, restart,
 backup, and restore flow passes against both Node/SQLite and Workers/D1. A
 restored installation can decrypt a seeded secret after its master key is
-securely reintroduced. Concurrent, reused, expired, and unapproved enrollment
-codes fail to issue credentials. With two dashboards, a display credential can
-read only its assignment through loaders and resource routes and has no
-administrative capability. An unauthenticated attacker cannot claim a reachable
-fresh installation: attacker-first, replay, and concurrent first-administrator
+securely reintroduced. Envelope-encryption tests on both adapters cover OAuth
+tokens, API keys, private keys, tampering, nonce uniqueness, context-bound
+cross-installation substitution, KEK rewrapping, DEK rotation, unknown key
+versions, and fail-closed recovery without key material. Concurrent, reused,
+expired, and unapproved enrollment codes fail to issue credentials. With two
+dashboards, a display credential can read only its assignment through loaders
+and resource routes and has no administrative capability. An unauthenticated
+attacker cannot claim a reachable fresh installation: attacker-first, replay,
+and concurrent first-administrator
 requests prove the installer-generated bootstrap capability is consumed
-atomically and the claim endpoint is permanently disabled afterward.
+atomically and the claim endpoint is permanently disabled afterward. A second
+user can be invited, receives only the assigned installation capabilities, and
+loses both new and active-session access when removed on Node/SQLite and
+Workers/D1. Cross-origin and missing, malformed, or mismatched CSRF-token
+requests cannot mutate dashboards, displays, users, or secrets on either
+deployment.
 
 ## Phase 2 — provider platform and GitHub
 
@@ -62,11 +73,17 @@ data.
 - Pull-request, issue, repository, and workflow-run widgets.
 
 **Exit gate:** SQLite and D1 tests cover atomic record/cursor/event checkpoints,
-idempotent upserts, disconnects, duplicate webhooks, token revocation, and two
-workers racing across lease expiry; stale fencing tokens cannot commit. A seeded
-canary private key and token never appear in display-facing HTML, loader data,
-JSON, logs, or event payloads. A GitHub workflow change appears on an enrolled
-display.
+idempotent upserts, disconnects, duplicate webhooks, token revocation, bounded
+backoff, terminal failures, maximum attempts, dead-lettering, and two workers
+racing across lease expiry; stale fencing tokens cannot commit. Valid webhook
+signatures over the exact raw bytes enqueue once, while missing, malformed, and
+body-mismatched signatures enqueue nothing. Multi-page fixtures cover every
+GitHub record kind and deletion from a later page. CI rejects any GitHub App
+permission outside the documented read-only allowlist. With webhooks suppressed,
+scheduled polling discovers updates and deletions. A seeded canary private key
+and token never appear in display-facing HTML, loader data, JSON, logs, or event
+payloads. The complete GitHub authorization-through-workflow-change-to-display
+scenario passes against both Node/SQLite and Workers/D1.
 
 ## Phase 3 — live displays
 
@@ -83,7 +100,9 @@ display.
 
 **Exit gate:** a display misses no state change across Wi-Fi loss, Hub restart,
 Worker replacement, ordinary replay, or reconnection from a cursor older than
-retention. Revoking a credential or changing its dashboard assignment stops an
+retention. A write concurrent with stale-client snapshot creation is represented
+by the consistent snapshot or replayed after its returned high-water mark, never
+neither. Revoking a credential or changing its dashboard assignment stops an
 already-open stream without waiting for the client to reconnect. Two-dashboard
 tests prove that snapshot and SSE access remain assignment-scoped.
 

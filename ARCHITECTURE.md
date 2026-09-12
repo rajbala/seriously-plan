@@ -78,8 +78,12 @@ Scheduled work and webhook deliveries are durable SQL rows. Workers claim a
 bounded number with expiring leases. Every claim receives a monotonically
 increasing fencing token; commits from an expired or superseded claim are
 rejected. Work is idempotent and resumable, and external actions use their own
-idempotency keys where the provider supports them. The same job logic can be
-invoked by a systemd timer, cron, or Cloudflare Cron Trigger.
+idempotency keys where the provider supports them. Transient failures use
+bounded exponential backoff with jitter and a maximum attempt count. Invalid
+configuration, revoked credentials, and other permanent failures become
+terminal immediately. Exhausted work moves to an inspectable dead-letter state
+and cannot starve newly eligible jobs. The same job logic can be invoked by a
+systemd timer, cron, or Cloudflare Cron Trigger.
 
 Every dashboard-affecting transaction appends a monotonically ordered change
 event. SSE clients reconnect with `Last-Event-ID`. A persistent Node server can
@@ -90,6 +94,12 @@ missing, malformed, or older cursor causes an explicit full-snapshot
 reconciliation before incremental delivery resumes. Active streams periodically
 revalidate the display credential and dashboard assignment and close promptly
 after expiry, revocation, or reassignment.
+
+Snapshot reconciliation has a transactional event boundary. The server reads a
+dashboard snapshot and its event high-water mark from one consistent database
+view, returns both, and replays events strictly after that mark. If an adapter
+cannot provide that transaction shape, it captures the high-water mark first
+and replays everything after it, allowing idempotent overlap but never a gap.
 
 ## Provider model
 
@@ -114,6 +124,15 @@ content by default. Each collector supplies a collector-scoped idempotency key
 and monotonically increasing sequence. Duplicate submissions are harmless and
 older out-of-order status updates cannot replace newer state.
 
+The GitHub provider follows every pagination cursor for repositories, pull
+requests, issues, and workflow runs. Scheduled reconciliation remains the source
+of correctness when webhooks are delayed or lost and detects both updates and
+deletions. Webhook ingress authenticates the exact raw request bytes before
+parsing or enqueueing; missing, malformed, or body-mismatched signatures fail
+closed. The GitHub App manifest is versioned and CI compares it with an explicit
+read-only permission allowlist, rejecting any additional write or administrative
+scope.
+
 ## Authentication and secrets
 
 Identity classes remain separate:
@@ -124,10 +143,39 @@ Identity classes remain separate:
 - providers have narrowly scoped external credentials.
 
 Provider secrets are encrypted before storage using a master key supplied by
-the deployment. Displays never receive provider credentials. Display enrollment
-uses a short-lived code approved from an authenticated administrative browser.
-Redemption atomically consumes the code exactly once; concurrent redemption,
-reuse, expiry, and failed approval do not issue credentials.
+the deployment. This includes OAuth client secrets and refresh tokens, API keys,
+private keys, webhook secrets, and other provider credentials. Displays never
+receive provider credentials. Display enrollment uses a short-lived code
+approved from an authenticated administrative browser. Redemption atomically
+consumes the code exactly once; concurrent redemption, reuse, expiry, and failed
+approval do not issue credentials.
+
+Secrets use envelope encryption. Each installation, or each organization in the
+hosted edition, has a random data-encryption key (DEK). Secrets are encrypted
+with AES-256-GCM using a fresh cryptographically random nonce for every write;
+nonce reuse under a DEK is forbidden. Authenticated context binds the ciphertext
+to its installation or tenant, provider, credential name, and schema version so
+ciphertext cannot be transplanted into another scope. Stored rows contain only
+ciphertext, nonce, algorithm and DEK version metadata.
+
+The DEK is wrapped with AES Key Wrap by a deployment key-encryption key (KEK)
+that never enters SQLite or D1. Self-hosters supply it through an environment
+secret, mounted secret file, or external secret adapter; the hosted Worker
+receives it as a Worker secret. Providers access plaintext only through a scoped
+`SecretStore` operation and never receive the KEK, raw DEK, or database access.
+Plaintext is never cached persistently or included in logs, errors, browser
+data, SSE, exports, telemetry, or source maps. Authentication failure, unknown
+key versions, and context mismatch fail closed without returning partial data.
+
+KEK versions permit rewrapping DEKs without rewriting every secret. DEK rotation
+creates a new version and incrementally re-encrypts credentials, retaining an
+old key only until migration is verified. Backup recovery treats key material
+separately: a database backup requires a separately protected recovery package
+or an externally retained KEK. A portable recovery package encrypts key material
+under a user-held recovery key; a passphrase option derives that key with a
+versioned memory-hard KDF and recorded salt and work parameters. Restore tests
+decrypt a canary only after that material is deliberately reintroduced; deletion
+purges wrapped DEKs and all recoverable copies according to retention policy.
 
 A new installation cannot be claimed merely by reaching its public endpoint.
 The installer generates a high-entropy, single-use bootstrap capability and
