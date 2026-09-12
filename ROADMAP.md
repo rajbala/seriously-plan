@@ -68,16 +68,26 @@ adapters. Database and backup canaries prove raw session, display, collector,
 invitation, callback-state, and other bearer values are never stored.
 Password canaries prove only unique salts and policy-compliant Argon2id
 verifiers are stored on both adapters; login, migration, parameter upgrade, and
-malformed-verifier tests fail safely. Concurrent removal, self-demotion, and
-transfer preserve at least one standalone owner atomically on SQLite and D1.
+malformed-verifier tests fail safely. Account, source, and global login limits
+bound guessing and Argon2id work without permanent lockout. Session tests require
+rotation at login, production `Secure`, `HttpOnly`, host-only and appropriate
+`SameSite` cookies, and no credentials in URLs or Web Storage. Concurrent
+removal, self-demotion, and transfer preserve at least one standalone owner
+atomically on SQLite and D1.
 Enrollment tests prove an approved human-readable code cannot redeem without
 the initiating display's separate high-entropy device secret. A restore racing
 with mutations and leased jobs advances an external generation and rejects every
 pre-restore commit on both adapters.
 
-Cross-origin and missing, malformed, or mismatched CSRF-token
-requests cannot mutate dashboards, displays, users, or secrets on either
-deployment.
+Removal and demotion races prove every already-authorized privileged mutation
+rechecks its user/membership generation at commit. Backups taken during writes
+or a simulated crash restore one complete pre-write or post-write point on
+SQLite and D1, including WAL-visible and cross-table state, never a torn mix.
+
+The cross-origin and missing, malformed, or mismatched CSRF-token matrix covers
+every session-authenticated state-changing route on both deployments, including
+dashboard, display, user, secret, provider, collector, action, import, export,
+backup, restore, and installation-setting operations.
 
 ## Phase 2 — provider platform and GitHub
 
@@ -229,10 +239,20 @@ Restoring a shared D1 snapshot from before a completed purge cannot unwrap or
 recover the tenant because the external key authority retains a non-rollbackable
 tombstone; this is tested after the retention deadline.
 
+A hosted export restored into the public edition invokes the installer-bound
+local-owner bootstrap, imports no hosted identity or membership table, rejects
+all hosted sessions and machine credentials, reissues scoped local credentials,
+and proves the migrated dashboards and decrypted provider configuration are
+administrable.
+
 Operations audit tests prove append-only enforcement at repository and storage
 boundaries: update/delete attempts fail for support identities, destructive
 operations, tenant purge, and retention jobs, while linked corrections preserve
-the original record and tamper evidence verifies.
+the original record and tamper evidence verifies. Rewritten and internally
+re-chained D1 snapshots fail against an authenticated checkpoint anchored in the
+external operations/key authority. Step-up tests enforce a five-minute,
+single-use assertion bound to actor, capability, target, request, and reason and
+reject stale, replayed, or substituted assertions.
 
 ## Phase 6 — appliance integration and public launch
 
@@ -259,6 +279,10 @@ cannot read Hub data, inherited environment or recovery keys, escape its
 filesystem, identity, or resource limits, or contact undeclared network
 destinations; hosts lacking the required sandbox reject local-process
 installation.
+
+A malicious community widget cannot access Hub DOM, cookies, storage, APIs, or
+undeclared networks from its separate-origin sandbox. Declarative widgets and
+the schema-validated message bridge expose only manifest-granted data/actions.
 
 ## Deferred until justified
 

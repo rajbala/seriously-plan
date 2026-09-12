@@ -184,6 +184,15 @@ recalibrated. Passwords are never encrypted, logged, exported, or retained after
 verification. Optional WebAuthn credentials store public keys, never private key
 material.
 
+Login verification is bounded by account, network source, and deployment-wide
+rate controls with increasing delays and generic responses. Limits cap expensive
+Argon2id concurrency but recover automatically and never create a permanent
+attacker-triggered account lockout. A successful login rotates the session ID.
+Administrative sessions use host-only `Secure`, `HttpOnly`, appropriately
+`SameSite` cookies; credentials never enter URLs or Web Storage. Plain HTTP is
+permitted only by an explicit loopback development mode that cannot be enabled
+in production.
+
 Session, display, collector, invitation, callback-state, and other bearer
 capabilities are high-entropy values disclosed once. Storage contains only a
 keyed or cryptographic verifier plus a non-secret lookup prefix, scope, expiry,
@@ -192,6 +201,11 @@ and backup scans use canaries to enforce this for every credential class. A
 restore advances the installation or tenant authentication epoch and rotates all
 restored sessions and machine credentials, so credentials revoked after an old
 backup cannot become valid again.
+
+User and membership authorization has a monotonic generation captured by each
+privileged mutation. Removal, demotion, or role change advances it in the same
+transaction, and every mutation rechecks it at commit. Work authorized under an
+older generation cannot commit after access changes.
 
 Provider secrets are encrypted before storage using a master key supplied by
 the deployment. This includes OAuth client secrets and refresh tokens, API keys,
@@ -238,6 +252,13 @@ restore generation held outside the replaced data. New mutations and job claims
 pause during replacement, and every in-flight mutation and job commit rechecks
 the generation. Work authorized against the pre-restore generation cannot write
 into restored state.
+
+Backups use adapter-provided point-in-time snapshots. SQLite uses its online
+backup/snapshot facility rather than copying database files; D1 uses its
+consistent backup/export primitive. The artifact represents one committed
+database boundary, including encryption metadata and required event/job state.
+A crash leaves either the prior complete artifact or the new complete artifact,
+never a partially published backup.
 
 A new installation cannot be claimed merely by reaching its public endpoint.
 The installer generates a high-entropy, single-use bootstrap capability and
@@ -310,6 +331,11 @@ ticket metadata, step-up authentication for destructive operations, and an
 immutable audit record. Customer sessions and operations identities without the
 specific capability are rejected.
 
+Step-up assertions expire within five minutes, are single-use, and bind the
+operations identity, destructive capability, target tenant, request digest, and
+audit reason. A prior, replayed, or differently targeted assertion authorizes
+nothing.
+
 Plans define tenant limits for stored bytes, active displays and collectors,
 provider synchronizations, ingestion requests, queued/running jobs, and outbound
 event delivery. Admission reserves capacity atomically with the accepted write
@@ -321,7 +347,10 @@ organization's allocation.
 Operations audit storage is append-only at repository and database boundaries.
 No support, purge, retention, or tenant repository exposes update or delete for
 audit facts. Corrections append a linked superseding record; integrity chaining
-or equivalent tamper evidence detects offline rewriting.
+or equivalent tamper evidence detects offline rewriting. Hosted authenticated
+audit checkpoints are periodically anchored in the external key/operations
+authority; verification rejects a D1 snapshot whose rows and internal chain were
+both rewritten and recomputed after the last anchor.
 
 Hosted per-tenant key status is held by a key authority outside shared customer
 D1 data and its backup lifecycle. Purge destroys tenant wrapping material and

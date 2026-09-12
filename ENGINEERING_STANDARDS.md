@@ -111,6 +111,13 @@ Widget code uses a separate browser SDK, restrictive Content Security Policy,
 and safe host components; hostile text, Markdown, HTML, SVG, and URLs are
 encoded or sanitized by maintained libraries.
 
+Community widgets are either declarative host-rendered specifications or execute
+in sandboxed frames on a separate untrusted origin without same-origin cookies.
+The frame receives only declared data through a capability-limited, schema-
+validated `postMessage` protocol and cannot navigate the parent, open arbitrary
+network connections, or invoke Hub APIs. Bundled reviewed widgets may run in the
+Hub bundle but pass the same hostile-content tests.
+
 ## Community contribution system
 
 - A scaffold command generates the manifest, typed entrypoint, configuration
