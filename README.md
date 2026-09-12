@@ -12,6 +12,7 @@ plan of Seriously.
 
 ## Documents
 
+- [North-star command-center scenario](PRODUCT_SCENARIO.md)
 - [Product and architecture](ARCHITECTURE.md)
 - [Public/private repository boundary](REPOSITORY_BOUNDARIES.md)
 - [Delivery roadmap](ROADMAP.md)

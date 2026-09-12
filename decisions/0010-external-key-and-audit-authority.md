@@ -14,14 +14,16 @@ property. This requirement does not exist for the single-tenant public product.
 
 The hosted edition uses a small separately administered authority outside the
 customer D1 backup lifecycle. It stores non-rollbackable tenant-key tombstones
-and issues monotonically sequenced authenticated receipts for every operations
-audit commit. Destructive operations fail closed when the authority is
+and authorization generations for membership and tenant lifecycle transitions.
+It issues monotonically sequenced authenticated receipts and retains replayable
+canonical records for every operations audit commit. Destructive operations fail closed when the authority is
 unavailable. Access uses workload identity, least privilege, quorum-protected
 administration, immutable audit, encrypted geographically separate backups, and
 regular restore and reconciliation drills.
 
-The authority exposes narrow tombstone, key-status, receipt-append, and
-verification operations—never customer records or a general database API.
+The authority exposes narrow tombstone, key-status, authorization-generation,
+receipt-append, audit-replay, and verification operations—never dashboard or
+provider records or a general database API.
 Receipt creation follows an idempotent prepare/finalize protocol with a durable
 D1 intent between those phases. The destructive state change occurs only after
 finalization and receipt verification, in the same D1 transaction that completes

@@ -6,6 +6,10 @@ Seriously is a dashboard for protected developer and infrastructure resources.
 Users configure providers such as GitHub, Codex, Claude Code, GitLab, and AWS,
 then assign views to browsers or dedicated kiosk displays.
 
+The [north-star command-center scenario](PRODUCT_SCENARIO.md) is the product
+acceptance reference: agent attention, CI and review status, usage, deployments,
+host health, and recent activity compose from provider-neutral records.
+
 The system has four concepts:
 
 - **Hub**: configuration, authentication, normalized data, history, and UI.
@@ -296,17 +300,19 @@ key versions, and context mismatch fail closed without returning partial data.
 KEK versions permit rewrapping DEKs without rewriting every secret. DEK rotation
 creates a new version and incrementally re-encrypts credentials, retaining an
 old key only until migration is verified. Rotation first advances a key
-generation and installs a write barrier: every secret write compares that
-generation at commit and retries encryption under the active DEK if cutover has
-begun. Verification covers all rows committed through the barrier before an old
-key can be retired. Backup recovery treats key material
+generation and installs a write barrier: every write of any tenant-encrypted row
+compares that generation at commit and retries encryption under the active DEK
+if cutover has begun. Verification covers credentials, dashboards, normalized
+records, events, jobs, exports, and every other encrypted row committed through
+the barrier before an old key can be retired. Backup recovery treats key material
 separately: a database backup requires a separately protected recovery package
 or an externally retained KEK. A portable recovery package encrypts key material
 under a user-held recovery key; a passphrase option derives that key with a
-versioned Argon2id KDF using at least 64 MiB memory, three iterations, and a
-deployment-calibrated target of at least 500 ms on supported recovery hardware.
-Recorded parameters below policy are rejected before derivation and newer
-packages may raise the versioned floor. Restore tests
+versioned Argon2id KDF using 64–1024 MiB memory, 3–20 iterations, parallelism
+between 1 and 16, and a deployment-calibrated target of at least 500 ms on
+supported recovery hardware. A bounded schema validates the algorithm, salt,
+and all cost parameters before allocation or derivation. Values below or above
+policy are rejected and newer packages may raise the versioned floor. Restore tests
 decrypt a canary only after that material is deliberately reintroduced; deletion
 purges wrapped DEKs and all recoverable copies according to retention policy.
 
@@ -416,6 +422,12 @@ encrypted credentials, per-tenant key material, exports, and recoverable backup
 material. Only narrowly documented audit or legal-retention records may remain,
 and they contain no recoverable customer secrets or dashboard content.
 
+Hosted membership removals, role changes, suspension, recovery, and deletion
+advance authorization generations in the external authority before D1 reflects
+the transition. Hosted restore remains closed until it reconciles every restored
+membership and lifecycle generation with this non-rollback state; older rows are
+disabled or corrected before authentication resumes.
+
 Cross-tenant operations use a separate private interface, identity store, and
 session boundary. Operations roles grant named, revocable capabilities such as
 tenant lookup, support diagnostics, suspension, export authorization, or purge
@@ -449,8 +461,12 @@ Retries are idempotent at every phase. Reserved sequences can be explicitly
 aborted, while finalized receipts and pending intents are reconciled until the
 final D1 transaction succeeds. Thus an authority failure cannot leave an applied
 but unreceipted destructive operation, and a D1 failure produces an inspectable,
-recoverable state rather than an unverifiable gap. The receipt binds tenant,
-sequence, operation digest, intent identifier, and prior receipt; verification
+recoverable state rather than an unverifiable gap. The authority retains the
+canonical audit record and transition envelope—not only its digest—until it is
+included in a verified later disaster-recovery baseline. Restore replays any
+finalized receipt and record absent from D1 before reopening operations. The
+receipt binds tenant, sequence, operation digest, intent identifier, and prior
+receipt; verification
 rejects rewritten D1 rows, a recomputed chain, unexplained gaps, and rollback.
 
 Hosted per-tenant key status is held by a key authority outside shared customer
@@ -510,6 +526,8 @@ registered installation and is never a Hub administration credential.
 Report and alias deletion writes a non-rollbackable tombstone to the external
 authority before removing D1 rows. Hosted restore and leaderboard reads apply
 those tombstones, so a pre-deletion snapshot cannot republish deleted data.
+Leaderboard reads fail closed whenever a fresh authoritative tombstone result is
+unavailable; an outage cannot be interpreted as “not deleted.”
 
 ## Hosted pricing and billing
 

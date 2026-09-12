@@ -104,7 +104,8 @@ remain active. Raw standalone backup fixtures reveal no user data, password
 verifiers, dashboards, provider records, or event history without separately
 held recovery material.
 Recovery-package fixtures reject Argon2id parameters below the versioned memory,
-iteration, or calibrated-time floor before attempting derivation.
+iteration, or calibrated-time floor, or above memory, iteration, parallelism,
+salt, and metadata ceilings, before allocation or derivation.
 
 The cross-origin and missing, malformed, or mismatched CSRF-token matrix covers
 every session-authenticated state-changing route on both deployments, including
@@ -175,6 +176,8 @@ claiming work.
 - Event retention and compaction with an explicit oldest-retained cursor and
   full-snapshot reconciliation for stale or invalid cursors.
 - Periodic authorization and assignment revalidation for already-open streams.
+- Per-credential, per-installation or tenant, and deployment-wide connection
+  limits plus bounded per-stream queues and slow-consumer deadlines.
 
 **Exit gate:** a display misses no state change across Wi-Fi loss, Hub restart,
 Worker replacement, ordinary replay, or reconnection from a cursor older than
@@ -199,6 +202,9 @@ selects the notifier; unavailable configured adapters fail observably instead of
 silently switching transports. Database-poll mode uses bounded jitter and an
 indexed sequence query, while the Lenovo maintains one SSE connection rather
 than polling resources itself.
+Connection-flood and non-reading-client fixtures prove both runtimes cap streams,
+queued bytes, file descriptors, and backpressure duration without affecting
+healthy displays.
 
 ## Phase 4 — Codex and Claude Code collectors
 
@@ -209,6 +215,9 @@ content by default.
 - Narrow, revocable collector credentials.
 - Codex collector and session-status widgets.
 - Claude Code collector using the same normalized model.
+- Provider-neutral work-session, usage-aggregate, and activity-event schemas.
+- Declarative attention rules for needs-input, failure, staleness, and usage
+  thresholds, with acknowledged and resolved lifecycle.
 - Explicit privacy controls and redaction tests.
 - Collector health and last-seen status.
 - Collector-scoped idempotency keys and monotonic sequence handling.
@@ -325,6 +334,10 @@ Dispatch races prove an action intent's generation-checked claim is ordered with
 session, membership, and tenant revocation before any provider request is sent.
 Authority-outage and concurrent-purge tests prove encrypted customer access
 fails closed rather than using stale key status.
+Pre-removal and pre-suspension D1 snapshots cannot restore membership or tenant
+access because external authorization generations reconcile before reopening.
+Restoring a snapshot predating finalized audit receipts replays their canonical
+records from the authority before operations resume.
 
 Raw pre-purge snapshot inspection proves all purge-sensitive tenant rows are
 ciphertext and remain unrecoverable after the external tombstone. Leaderboard
@@ -332,6 +345,12 @@ tests delete reports from closed periods from retained and public views without
 allowing score replacement or reopening the bucket.
 Pre-deletion leaderboard snapshots remain deleted after hosted restore because
 external report tombstones are applied before retained or public reads.
+Leaderboard reads during an authority outage after such a restore fail closed
+and never expose an alias or report whose deletion cannot be disproved.
+
+DEK-rotation races cover every tenant-encrypted write path, including dashboards,
+records, events, jobs, and exports; no retiring-generation ciphertext commits
+after cutover.
 
 ## Phase 6 — appliance integration and public launch
 
@@ -363,9 +382,14 @@ A malicious community widget cannot access Hub DOM, cookies, storage, APIs, or
 undeclared networks from its separate-origin sandbox. Declarative widgets and
 the schema-validated message bridge expose only manifest-granted data/actions.
 
+The north-star command-center scenario passes end to end with GitHub, Codex,
+Claude Code, Cloudflare, and a host collector, then substitutes a community
+connector that drives the same generic widgets without core changes.
+
 ## Deferred until justified
 
-- Durable Objects or another proprietary coordination primitive
+- Durable Objects or another proprietary primitive as authoritative state or a
+  required public dependency
 - microservices
 - Redis or NATS as a required service
 - arbitrary in-process third-party code

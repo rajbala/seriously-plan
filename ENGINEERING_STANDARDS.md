@@ -89,6 +89,15 @@ widget registrations, localization and branding, migrations, documentation,
 quality status, and code owners. Unknown fields and unsupported requirements
 fail validation.
 
+Every installed extension artifact is addressed by an immutable cryptographic
+digest and verified before installation and every execution. Mutable tags,
+branches, and registry references may aid discovery but never identify installed
+bytes. Trusted publisher signatures may authenticate provenance, but the pinned
+digest remains authoritative. Updates are explicit verified transitions; any
+new or widened capability requires renewed administrator approval. Contract tests
+replace an artifact behind a mutable reference, corrupt downloaded bytes, forge
+metadata, and widen capabilities, and require installation or update to fail.
+
 The host grants narrow capabilities for HTTP, secrets, synchronization
 checkpoints, events, clock, logging, and declared actions. It never grants a raw
 database, filesystem, tenant selector, arbitrary secret access, or private host
