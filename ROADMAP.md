@@ -103,6 +103,8 @@ cannot commit under a revoked or rotated session even while its user and role
 remain active. Raw standalone backup fixtures reveal no user data, password
 verifiers, dashboards, provider records, or event history without separately
 held recovery material.
+Recovery-package fixtures reject Argon2id parameters below the versioned memory,
+iteration, or calibrated-time floor before attempting derivation.
 
 The cross-origin and missing, malformed, or mismatched CSRF-token matrix covers
 every session-authenticated state-changing route on both deployments, including
@@ -189,6 +191,8 @@ Clock-driven tests prove expiry, revocation, and reassignment close an existing
 stream within 60 seconds on both deployments. Well-formed future and
 wrong-dashboard or wrong-generation cursors force a scoped snapshot instead of
 suppressing updates.
+Compaction races prove retention-floor validation and replay are atomic or detect
+a noncontiguous first sequence and force a scoped snapshot.
 Notifier contract tests drop, duplicate, delay, and reorder signals and restart
 the adapter while proving identical eventual state. Configuration explicitly
 selects the notifier; unavailable configured adapters fail observably instead of
@@ -233,13 +237,16 @@ visibly distinct, and estimated spend identifies its versioned price snapshot.
 and use an isolated, metered Workers/D1 service.
 
 - Global hosted user identity and organization-as-tenant model.
+- Passkey-first hosted authentication with verified-email bootstrap and delayed
+  recovery, multiple authenticators, session revocation, and step-up gates.
 - Organization creation, switching, invitations, and deletion lifecycle.
 - Capability-based `owner`, `admin`, `member`, and `viewer` authorization.
 - Membership removal, session revocation, ownership transfer, and last-owner
   protection.
 - Tenant-scoped hosted repositories and composite schema constraints.
 - Per-tenant encryption derivation.
-- Billing, plans, quotas, suspension, and deletion.
+- Stripe billing at USD $5 per billable person per month, versioned seat counts,
+  webhook reconciliation, grace, suspension, and deletion separation.
 - Managed backup/export and hosted-to-self-hosted migration.
 - Operational audit log and separately authenticated support console.
 - Two-tenant adversarial isolation suite for every repository.
@@ -257,6 +264,20 @@ role matrix, including one user with different roles across organizations and
 attempts to grant capabilities the actor lacks. Removal terminates existing
 access. Concurrent leave, removal, demotion, and transfer requests preserve at
 least one owner on D1.
+
+Hosted authentication tests cover passkey enrollment and multiple credentials;
+email-link expiry, replay, verifier storage, and rate limits; delayed recovery
+notifications; session invalidation; mandatory new-passkey registration; and
+recent-authentication enforcement across all organizations belonging to one
+identity. Social identity failure cannot block recovery.
+
+Billing tests calculate one seat per distinct active human organization member,
+exclude invitations and machine identities, and cover joins, removals,
+cross-organization membership, proration, cancellation, failed payment, grace,
+and suspension. Exact-raw-body Stripe signature tests, duplicate and reordered
+webhooks, missed-webhook reconciliation, stale browser redirects, and concurrent
+seat changes cannot create incorrect entitlements. Billing failure never invokes
+tenant deletion or purge.
 
 Suspending or deleting an organization rejects every user and machine request
 boundary and prevents already-leased jobs and in-flight non-job mutations from
@@ -298,10 +319,19 @@ proves retries are idempotent, destructive state is never applied without its
 final receipt, reservations can be aborted, and finalized-but-unapplied intents
 are recoverable without unexplained sequence gaps.
 
+Restore tests quarantine all externally mutating jobs and permit execution only
+after durable idempotency proof or reconciliation using non-rollback evidence.
+Dispatch races prove an action intent's generation-checked claim is ordered with
+session, membership, and tenant revocation before any provider request is sent.
+Authority-outage and concurrent-purge tests prove encrypted customer access
+fails closed rather than using stale key status.
+
 Raw pre-purge snapshot inspection proves all purge-sensitive tenant rows are
 ciphertext and remain unrecoverable after the external tombstone. Leaderboard
 tests delete reports from closed periods from retained and public views without
 allowing score replacement or reopening the bucket.
+Pre-deletion leaderboard snapshots remain deleted after hosted restore because
+external report tombstones are applied before retained or public reads.
 
 ## Phase 6 — appliance integration and public launch
 

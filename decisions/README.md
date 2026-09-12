@@ -15,6 +15,8 @@ Accepted initial decisions:
 | 0009 | A hosted organization is the tenant and resource-ownership boundary. |
 | [0010](0010-external-key-and-audit-authority.md) | Hosted purge and operations audit finality use a separate narrow authority. |
 | [0011](0011-pluggable-change-notification.md) | Change notification is pluggable; the transactional SQL outbox is authoritative. |
+| [0012](0012-hosted-stripe-billing.md) | Hosted billing uses Stripe at $5 per active human organization member each month. |
+| [0013](0013-hosted-passkey-identity.md) | Hosted identity is passkey-first with verified-email bootstrap and recovery. |
 
 New consequential decisions should receive a separate numbered Markdown file
 describing context, decision, alternatives, consequences, and status. Amend a

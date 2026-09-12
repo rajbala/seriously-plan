@@ -98,6 +98,14 @@ unprotected action may have been accepted, the outcome becomes `indeterminate`:
 the Hub reconciles it through a provider read when possible or requires an
 audited user decision. It never blindly retries or falsely reports failure.
 
+An external provider action is dispatched only from a durable action intent.
+Creating or claiming that intent atomically rechecks the initiating session,
+membership, tenant lifecycle, and action generation and is the authorization
+linearization point ordered against revocation. If revocation wins, the claim
+cannot dispatch; if the claim wins, revocation reports the already-committed
+dispatch and cannot pretend it was cancelled. Dispatch results and idempotency
+evidence are durably reconciled to that intent.
+
 Every dashboard-affecting transaction appends a monotonically ordered change
 event to a transactional outbox in the same commit as the state change. An
 injected `ChangeNotifier` publishes only a scoped high-water notification; the
@@ -129,6 +137,12 @@ Active streams revalidate the display credential and dashboard assignment at
 least every 60 seconds and before delivering data after an authorization-change
 notification. Expiry, revocation, or reassignment closes the stream within that
 maximum interval.
+
+Cursor validation, retention-floor observation, and replay occur in one
+consistent database view. If an adapter cannot hold that view, the response
+verifies that its first returned sequence is contiguous with the requested
+cursor and its observed floor; any gap or concurrent compaction forces a scoped
+snapshot instead of returning a truncated replay.
 
 Snapshot reconciliation has a transactional event boundary. The server reads a
 dashboard snapshot and its event high-water mark from one consistent database
@@ -289,7 +303,10 @@ key can be retired. Backup recovery treats key material
 separately: a database backup requires a separately protected recovery package
 or an externally retained KEK. A portable recovery package encrypts key material
 under a user-held recovery key; a passphrase option derives that key with a
-versioned memory-hard KDF and recorded salt and work parameters. Restore tests
+versioned Argon2id KDF using at least 64 MiB memory, three iterations, and a
+deployment-calibrated target of at least 500 ms on supported recovery hardware.
+Recorded parameters below policy are rejected before derivation and newer
+packages may raise the versioned floor. Restore tests
 decrypt a canary only after that material is deliberately reintroduced; deletion
 purges wrapped DEKs and all recoverable copies according to retention policy.
 
@@ -298,6 +315,12 @@ restore generation held outside the replaced data. New mutations and job claims
 pause during replacement, and every in-flight mutation and job commit rechecks
 the generation. Work authorized against the pre-restore generation cannot write
 into restored state.
+
+Restore marks every pending or leased externally mutating job as quarantined.
+It becomes eligible only when a provider-supported idempotency key proves replay
+safe or reconciliation against evidence held outside the restored snapshot
+establishes the outcome. Otherwise it remains `indeterminate` for an audited
+human decision; restore never blindly redispatches it.
 
 Backups use adapter-provided point-in-time snapshots. SQLite uses its online
 backup/snapshot facility rather than copying database files; D1 uses its
@@ -361,6 +384,19 @@ repositories before entering shared domain and route code. Organization
 selection supports users who belong to more than one organization, but URL,
 hostname, cookie, header, and body hints never establish authorization.
 
+Seriously Cloud owns the global hosted identity. It is passwordless: an
+expiring, single-use verified-email link bootstraps the account, after which a
+passkey is the primary authenticator. Users are prompted to register at least
+two passkeys. Email-based recovery is delayed, notifies existing verified
+channels, invalidates all sessions and prior recovery attempts, and requires a
+new passkey before privileged access resumes. Email links store only verifiers,
+expire within 15 minutes, and are rate-limited by address, source, and service.
+Hosted WebAuthn, session lifetime, revocation, CSRF, recent-authentication, and
+recovery rules meet the same or stronger gates as standalone authentication.
+Optional social login may be linked only as a convenience and is never the sole
+recovery authority. Maintained WebAuthn and mail libraries implement these
+protocols; Seriously does not hand-roll them.
+
 Global identity tables use stable user keys and do not carry `tenant_id`.
 Membership is the explicit join from a global user key to an organization key.
 Tenant-owned D1 tables include `tenant_id` in primary keys, foreign keys,
@@ -420,7 +456,9 @@ rejects rewritten D1 rows, a recomputed chain, unexplained gaps, and rollback.
 Hosted per-tenant key status is held by a key authority outside shared customer
 D1 data and its backup lifecycle. Purge destroys tenant wrapping material and
 appends a non-rollbackable tombstone there before customer rows are removed.
-Every unwrap and restore consults that authority; a pre-purge shared-D1 snapshot
+Every unwrap and restore consults that authority; no cached status bypass is
+accepted. During an authority outage, encrypted tenant reads and writes fail
+closed rather than weakening purge guarantees. A pre-purge shared-D1 snapshot
 cannot restore a tombstoned key or make its ciphertext decryptable. Hosted
 backup tests restore pre-purge snapshots after retention and prove denial.
 Every purge-sensitive tenant row—including dashboards, normalized provider
@@ -468,6 +506,37 @@ Operators can preview the exact payload, disable reporting immediately, rotate
 or revoke the reporting identity, delete the alias and retained reports, and
 export their history. The signing key grants only report submission for its
 registered installation and is never a Hub administration credential.
+
+Report and alias deletion writes a non-rollbackable tombstone to the external
+authority before removing D1 rows. Hosted restore and leaderboard reads apply
+those tombstones, so a pre-deletion snapshot cannot republish deleted data.
+
+## Hosted pricing and billing
+
+Seriously Cloud launches at **USD $5 per billable person per month**. A billable
+person is one distinct active human member of an organization during the billing
+period. Pending invitations, suspended or removed memberships, displays,
+collectors, service credentials, and provider integrations are not seats. The
+same global identity in two independently billed organizations is one seat in
+each organization. The open self-hosted product has no license or per-seat fee.
+
+Stripe is the private hosted edition's first billing adapter. Stripe Checkout
+collects payment details and Stripe Customer Portal manages payment methods and
+cancellation; Seriously never handles raw card data. Signed Stripe webhooks are
+verified over exact raw bytes, stored idempotently, and reconciled by scheduled
+jobs. Browser redirects and client claims never activate entitlements. Seriously
+stores its own auditable subscription, price-version, seat-count, invoice, and
+entitlement state keyed to opaque Stripe identifiers, so domain authorization
+does not call Stripe synchronously. Seat changes update subscription quantity
+with Stripe's monthly proration behavior and reconciliation repairs missed or
+reordered webhooks.
+
+Payment failure enters a documented grace period and then suspends hosted access;
+it never immediately deletes customer data. Only the separate retention and
+purge lifecycle can erase an organization. Billing code, Stripe secrets, webhook
+handlers, product identifiers, tax configuration, and hosted pricing remain in
+`seriously-cloud`; the public package exposes only vendor-neutral entitlement
+and quota concepts where shared domain behavior needs them.
 
 The hosted edition starts with one shared D1 database and may later use a fixed
 set of D1 shards. Database-per-customer and platform-specific coordination are

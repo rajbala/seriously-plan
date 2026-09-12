@@ -36,9 +36,11 @@ protocol state distinguishes these from sequence tampering.
 
 ## Consequences and exit plan
 
-Hosted purge and destructive operations depend on this service's availability.
-Reads and ordinary tenant writes can continue according to an explicit degraded
-mode, but no operation may claim purge or audit finality without a receipt.
+Hosted purge and encrypted customer access depend on this service's
+availability. Encrypted tenant reads and writes fail closed during an outage;
+no stale cache or lease may outlive a concurrent tombstone. Public status and
+other non-customer operations may continue, but no operation may claim purge or
+audit finality without a receipt.
 The protocol and export format are vendor-neutral so the authority can move to
 another transactional, append-only implementation. A dual-write migration must
 verify every tenant tombstone and receipt chain before cutover; disaster recovery
