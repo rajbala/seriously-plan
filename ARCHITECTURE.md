@@ -131,9 +131,24 @@ reuse, expiry, and failed approval do not issue credentials.
 
 ## Hosted tenancy
 
-The public Hub models one installation. The private hosted Worker resolves an
-authenticated tenant and constructs tenant-scoped repositories before entering
-shared domain and route code.
+The public Hub models one installation. In the hosted product, an organization
+is the tenant and ownership boundary. A person has one global hosted identity
+and may belong to multiple organizations through explicit memberships. An
+organization owns its dashboards, integrations, provider credentials,
+collectors, displays, jobs, events, audit history, subscription, and quotas.
+
+Membership roles begin with `owner`, `admin`, `member`, and `viewer`. Permission
+checks use named capabilities rather than scattered role comparisons so roles
+can evolve without rewriting route logic. Invitations are single-use,
+short-lived, bound to an organization and intended identity, and recorded in
+the audit log. The last owner cannot leave or be removed; ownership must first
+be transferred or the organization must enter its deletion lifecycle.
+
+The private hosted Worker resolves a global authenticated identity, verifies
+membership in the selected organization, and constructs organization-scoped
+repositories before entering shared domain and route code. Organization
+selection supports users who belong to more than one organization, but URL,
+hostname, cookie, header, and body hints never establish authorization.
 
 Hosted D1 tables include `tenant_id` in primary keys, foreign keys, uniqueness
 constraints, cache keys, jobs, and change events. Hosted request code cannot

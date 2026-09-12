@@ -12,6 +12,7 @@ Accepted initial decisions:
 | 0006 | The public product models one installation. Hosted tenancy is private. |
 | 0007 | Public and private source live in separate repositories with one-way dependencies. |
 | 0008 | Official providers are bundled; workstation data enters through collectors. |
+| 0009 | A hosted organization is the tenant and resource-ownership boundary. |
 
 New consequential decisions should receive a separate numbered Markdown file
 describing context, decision, alternatives, consequences, and status. Amend a

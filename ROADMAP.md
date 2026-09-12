@@ -105,9 +105,14 @@ rejected on both deployments.
 
 ## Phase 5 — hosted private beta
 
-**Outcome:** invited customers can use an isolated, metered Workers/D1 service.
+**Outcome:** customers can create organizations, collaborate with scoped roles,
+and use an isolated, metered Workers/D1 service.
 
-- Tenant identity, membership, and lifecycle.
+- Global hosted user identity and organization-as-tenant model.
+- Organization creation, switching, invitations, and deletion lifecycle.
+- Capability-based `owner`, `admin`, `member`, and `viewer` authorization.
+- Membership removal, session revocation, ownership transfer, and last-owner
+  protection.
 - Tenant-scoped hosted repositories and composite schema constraints.
 - Per-tenant encryption derivation.
 - Billing, plans, quotas, suspension, and deletion.
@@ -120,7 +125,12 @@ rejected on both deployments.
 **Exit gate:** automated tests demonstrate tenant isolation; a hosted tenant can
 export and restore into the open self-hosted edition; billing failure cannot
 erase or expose customer data. A tenant-A identity cannot select tenant B using
-any hostname, slug, route, query, header, body, or conflicting tenant hint.
+any hostname, slug, route, query, header, body, or conflicting tenant hint. A
+user can create and switch organizations and hold different roles in each.
+Single-use, expiring, identity-bound invitations and all role transitions are
+tested. Removal terminates existing access, the last owner cannot be removed,
+and ownership transfer and organization deletion are auditable and recoverable
+according to the documented retention policy.
 
 ## Phase 6 — appliance integration and public launch
 

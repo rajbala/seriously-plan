@@ -43,7 +43,9 @@ Suggested packages:
 
 The private repository contains only hosted-service concerns:
 
-- tenant resolution and membership;
+- organization creation, membership, invitations, roles, and ownership
+  lifecycle;
+- authenticated organization selection and tenant resolution;
 - tenant-scoped D1 repositories and migrations;
 - subscription billing and quotas;
 - provisioning and suspension;
@@ -105,6 +107,14 @@ select a tenant without an authenticated membership or tenant-bound machine
 credential. These tests cover user routes, display snapshot and SSE routes,
 collector ingestion, provider callbacks, and webhook ingress. They also verify
 that conflicting tenant hints fail closed rather than selecting either tenant.
+
+Hosted identity and organization records are deliberately separate: one user
+may hold different roles in multiple organizations. Tests cover organization
+creation, duplicate and expired invitations, invitation identity binding,
+organization switching, cross-organization role differences, removal and
+revocation, last-owner protection, ownership transfer, and deletion. Removing a
+membership invalidates its active sessions and access without affecting the
+same user's memberships in other organizations.
 
 ## Licensing decision gate
 
