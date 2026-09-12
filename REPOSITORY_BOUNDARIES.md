@@ -22,6 +22,8 @@ The public repository contains:
 - provider and widget SDKs;
 - monorepo-managed display, collector, remote-extension, and administration
   client SDKs generated from or sharing canonical versioned wire schemas;
+- the open outbound bridge, machine-identity and rendezvous contracts, agent
+  adapters, and reserved durable command protocol;
 - official providers and collectors;
 - authentication, encryption, backup, restore, import, and export;
 - SQLite and single-installation D1 adapters;
@@ -41,6 +43,7 @@ Suggested packages:
 @seriously/widget-sdk
 @seriously/client-display
 @seriously/client-collector
+@seriously/client-bridge
 @seriously/client-remote-extension
 @seriously/client-admin
 @seriously/web-ui

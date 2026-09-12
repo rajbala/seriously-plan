@@ -17,6 +17,10 @@ starts delayed recovery. Recovery notifies existing channels, invalidates prior
 sessions and attempts, and requires a new passkey before privileged access.
 It also revokes or quarantines every authenticator registered before recovery;
 a still-trusted device must be explicitly re-enrolled from the recovered session.
+During the delay, a current passkey holder can sign a single-use veto that
+advances the recovery generation and freezes email recovery. A compromised inbox
+cannot override the veto; unfreezing uses an independently verified manual
+recovery path rather than another email link.
 Users are prompted to register at least two passkeys. Social login may be an
 optional convenience but is never the only recovery authority.
 

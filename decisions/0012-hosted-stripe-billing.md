@@ -11,9 +11,11 @@ handling into Seriously or imposing billing dependencies on self-hosters.
 
 ## Decision
 
-The launch price is USD $5 monthly for each distinct active human member of an
-organization. Machine identities and pending invitations are not seats; a person
-in two independently billed organizations is one seat in each. Stripe Checkout,
+The launch price is USD $5 per billable seat-month. A seat-month is the
+time-prorated integral of concurrently active human organization memberships;
+replacing one member with another at the same instant does not create two seats.
+Machine identities and pending invitations are not seats; a person in two
+independently billed organizations is one seat in each. Stripe Checkout,
 Customer Portal, subscriptions, and monthly proration are the first billing
 adapter. Verified idempotent webhooks and scheduled reconciliation update
 Seriously-owned entitlement state; browser redirects grant nothing.

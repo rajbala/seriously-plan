@@ -10,6 +10,9 @@ automated enforcement mechanism or a recorded plan to add one.
   limited to bounded lexical checks; they do not parse JavaScript, TypeScript,
   HTML, URLs, HTTP fields, source maps, JSON, SQL, OAuth messages, or other
   structured formats.
+- Agent discovery, state, attention, messages, and commands use documented
+  structured APIs, SDKs, hooks, or schemas. Terminal scraping and interpretation
+  of human-facing agent prose are prohibited, including as a fallback.
 - External data remains `unknown` until validated at its boundary against a
   canonical, versioned schema. Unchecked casts, partial property probing, and
   hand-written protocol parsers are prohibited when a standard parser or schema
@@ -38,6 +41,18 @@ automated enforcement mechanism or a recorded plan to add one.
 - Abstractions must correspond to a stable domain boundary or at least two
   concrete implementations. Premature microservices and distributed
   coordination remain deferred.
+
+## Plan coherence
+
+- Each concern has one normative architecture. Alternatives are explicitly
+  rejected, deferred, or adapter implementations of the same contract; they are
+  never presented elsewhere as a simultaneous competing design.
+- A new decision must cite and reconcile every affected accepted ADR, protocol,
+  trust boundary, deployment shape, repository boundary, and roadmap gate.
+- Superseded text is removed or marked historical in the same change. CI checks
+  document links and decision indexes, while review treats contradictory
+  requirements, duplicate domain models, and incompatible transports as release
+  blockers.
 
 ## Monorepo-managed SDKs
 

@@ -15,6 +15,9 @@ tested public/private dependency boundary.
 - Establish purpose-specific database ports and one SQLite/D1 contract suite.
 - Establish canonical OpenAPI 3.1, JSON Schema, and SSE schemas and generate
   monorepo-managed TypeScript and Python display and collector SDK packages.
+- Reserve machine identity, capability advertisement, command-envelope, state
+  machine, acknowledgement, expiry, generation, idempotency, and audit schemas;
+  command execution remains disabled.
 - Enforce trust-scoped display, collector, extension, administration, and widget
   dependency boundaries, including inspection of the built display artifact.
 - Define extension manifests, capability boundaries, scaffold tooling, local
@@ -91,8 +94,9 @@ SQLite and D1, including WAL-visible and cross-table state, never a torn mix.
 Backup authentication tests reject truncation, byte or metadata substitution,
 cross-installation replay, and structurally valid row tampering before replacing
 live state. Restore tests prove old password and WebAuthn credentials cannot mint
-a session until installer-authenticated recovery establishes new owner
-credentials. Clock-driven tests enforce administrative idle and absolute session
+a session until the separately held deployment recovery capability establishes
+new owner credentials, rotates itself, and rejects replay on Node and Workers.
+Clock-driven tests enforce administrative idle and absolute session
 deadlines, rotation on renewal, and recent-authentication bounds on both runtimes.
 WebAuthn fixtures reject reused or expired challenges, wrong RP IDs and origins,
 wrong ceremony types, absent required presence or verification, bad signatures,
@@ -221,6 +225,10 @@ content by default.
 - Narrow, revocable collector credentials.
 - Codex collector and session-status widgets.
 - Claude Code collector using the same normalized model.
+- Open-source bridge lifecycle with device-code enrollment, persistent machine
+  identity, outbound authenticated WebSocket, presence, capabilities, cursor
+  resume, reconnect, and configurable managed, self-hosted, or loopback endpoint.
+- Cloudflare deployment connector and a provider-neutral host-health collector.
 - Provider-neutral work-session, usage-aggregate, and activity-event schemas.
 - Declarative attention rules for needs-input, failure, staleness, and usage
   thresholds, with acknowledged and resolved lifecycle.
@@ -231,6 +239,7 @@ content by default.
 
 **Exit gate:** a workstation can report session state to either deployment; no
 prompt, source, terminal output, or transcript is transmitted by default.
+No adapter parses terminal output or human-facing prose, including as a fallback.
 Duplicate and out-of-order submissions cannot regress state. Expired or revoked
 credentials, collector identity substitution, and unsupported record kinds are
 rejected on both deployments.
@@ -239,6 +248,13 @@ Collector streams have byte and read-time limits, bounded batch counts,
 per-collector request rates, and configurable standalone retention/storage
 ceilings. Both adapters reject oversized, slow, over-batch, over-rate, and
 over-retention submissions without partial ingestion.
+
+Bridge tests cover challenge replay, machine-key substitution and rotation,
+revocation, stale connection generations, reconnect cursor gaps, duplicate
+events, capability changes, and Worker or Node replacement. Cloudflare fixtures
+produce deployment records and events, while host fixtures produce typed CPU,
+memory, accelerator, online, and build-state observations without granting the
+Hub shell or filesystem access.
 
 Leaderboard tests prove reporting is disabled by default; payload previews and
 captured traffic contain only consented aggregates; signatures, sequences,
@@ -267,12 +283,13 @@ and use an isolated, metered Workers/D1 service.
 - Two-tenant adversarial isolation suite for every repository.
 - Request-boundary isolation tests for users, displays/SSE, collectors, provider
   callbacks, and webhooks.
+- Managed organization-scoped bridge rendezvous using an ephemeral Durable
+  Object connection router over authoritative D1 intents and events.
 
 **Exit gate:** automated tests demonstrate tenant isolation; a hosted tenant can
 export and restore into the open self-hosted edition; billing failure cannot
 erase or expose customer data. A tenant-A identity cannot select tenant B using
 any hostname, slug, route, query, header, body, or conflicting tenant hint. A
-user can create and switch organizations and hold different roles in each.
 Single-use, expiring, identity-bound invitations and all role transitions are
 tested. Request-level allow/deny tests cover every capability in the documented
 role matrix, including one user with different roles across organizations and
@@ -287,6 +304,9 @@ revocation or quarantine of every pre-recovery authenticator; explicit
 re-enrollment from the recovered session; and recent-authentication enforcement
 across all organizations belonging to one identity. Social identity failure
 cannot block recovery.
+Recovery-contest tests prove a current passkey can veto and freeze an attempt,
+that a compromised email channel cannot override the signed veto, and that
+unfreezing requires the independent manual recovery process.
 
 Billing tests integrate concurrently active human organization memberships over
 the billing period, exclude invitations and machine identities, and cover
@@ -296,6 +316,8 @@ and suspension. Exact-raw-body Stripe signature tests, duplicate and reordered
 webhooks, missed-webhook reconciliation, stale browser redirects, and concurrent
 seat changes cannot create incorrect entitlements. Billing failure never invokes
 tenant deletion or purge.
+Oversized, slow, concurrent, and over-rate unauthenticated Stripe webhook bodies
+are rejected within byte and time bounds before consuming unbounded resources.
 
 Suspending or deleting an organization rejects every user and machine request
 boundary and prevents already-leased jobs and in-flight non-job mutations from
@@ -345,6 +367,9 @@ Dispatch races before and during provider requests prove an action intent's
 generation-checked claim and external restore-generation check are ordered with
 session, membership, tenant revocation, and restore replacement; no provider
 request straddles database replacement without a durable outcome.
+Read races prove restore closes loaders, display SSE, exports, and diagnostics
+before replacement and that no pre-restore response header or chunk is published
+under the new state.
 Authority-outage and concurrent-purge tests prove encrypted customer access
 fails closed rather than using stale key status.
 Pre-removal and pre-suspension D1 snapshots cannot restore membership or tenant
@@ -409,6 +434,31 @@ the schema-validated message bridge expose only manifest-granted data/actions.
 The north-star command-center scenario passes end to end with GitHub, Codex,
 Claude Code, Cloudflare, and a host collector, then substitutes a community
 connector that drives the same generic widgets without core changes.
+
+## Phase 7 — remote agent control
+
+**Outcome:** authorized users can perform narrow agent actions through the same
+bridge without exposing a general remote terminal.
+
+- Implement `approval.resolve`, `session.cancel`, and `instruction.submit` only
+  for adapters with structured, documented control APIs.
+- Add mobile-friendly session detail, attention notifications, command status,
+  and exact approval review.
+- Enforce granular command capabilities, recent authentication, policy checks,
+  expiry, generation fences, idempotency, durable acknowledgements, audit, and
+  explicit `indeterminate` outcomes.
+- Add standards-based end-to-end payload encryption as an optional protocol mode
+  after a separate cryptographic design review.
+- Keep arbitrary shell, filesystem mutation, peer-to-peer networking, and queued
+  offline approvals out of scope unless separately approved by an ADR.
+
+**Exit gate:** hosted, self-hosted, and loopback conformance tests execute the
+same typed commands through Node and Worker routers. Unauthorized, expired,
+replayed, stale-generation, wrong-machine, wrong-session, substituted-payload,
+revoked, and unsupported-capability commands have no effect. Disconnects at
+every delivery and acknowledgement boundary yield a durable correct state or an
+explicit indeterminate result, never a guessed success or blind retry. No test
+or production adapter obtains a generic shell or relies on terminal scraping.
 
 ## Deferred until justified
 

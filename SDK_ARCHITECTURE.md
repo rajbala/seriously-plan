@@ -15,6 +15,9 @@ The public monorepo owns distinct SDK families rather than one universal client:
   bounded polling, and exposes stale/offline state;
 - **collector** enrolls a producer and submits validated observations, usage
   aggregates, heartbeats, and idempotent checkpoints;
+- **bridge** adds machine identity, outbound connection, presence, capability
+  advertisement, and the reserved command envelope around collector and adapter
+  clients without enabling command execution;
 - **extension** implements remote connector and process-extension protocols
   through capability-limited host services;
 - **administration** manages dashboards, integrations, displays, users, and
@@ -26,6 +29,11 @@ Applications import only the narrow SDKs they need. In particular, the Lenovo
 Cage client imports the display and widget packages only. Dependency-graph and
 artifact-inspection gates reject display bundles containing administration,
 collector, provider-secret, database-adapter, or private-edition code.
+
+The bridge SDK and protocol are further constrained by
+[Remote-control-ready architecture](REMOTE_CONTROL.md). They reuse the same
+schemas and normalized records; they do not introduce terminal scraping, a
+second event model, or a WebSocket-only display API.
 
 The display SDK is the stable interface for actual dashboard clients. It owns
 device enrollment and credential rotation, capability and protocol negotiation,

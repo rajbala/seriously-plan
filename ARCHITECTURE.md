@@ -14,14 +14,15 @@ The system has four concepts:
 
 - **Hub**: configuration, authentication, normalized data, history, and UI.
 - **Provider**: a server-side integration with a protected resource.
-- **Collector**: an optional workstation agent that submits selected local
-  activity, such as Codex or Claude Code session status.
+- **Bridge**: the optional outbound host daemon that enrolls a machine and runs
+  collector and agent adapters for selected local activity. Remote control uses
+  the same boundary later but is disabled in initial releases.
 - **Display**: a read-only enrolled browser or kiosk assigned to dashboards.
 
 ```text
 GitHub / GitLab / AWS ---- provider ----+
                                         |
-Codex / Claude Code ---- collector ---- Hub ---- browser
+Codex / Claude Code ---- bridge ------- Hub ---- browser
                                         |
                                         +-------- Cage display
 ```
@@ -253,8 +254,13 @@ restore advances the installation or tenant authentication epoch and rotates all
 restored sessions and machine credentials, so credentials revoked after an old
 backup cannot become valid again. A credential generation held outside restored
 data also invalidates restored password and WebAuthn credentials. Recovery then
-requires an installer-authenticated owner credential reset; no restored verifier
-or authenticator can mint a current-generation session before that reset.
+requires a deployment-bound out-of-band recovery capability held outside the
+replaced database. Node installations use a permission-restricted local recovery
+secret or physical console path; Workers installations require a separately
+configured deployment secret. A challenge-response proof authorizes exactly one
+owner reset, rotates the capability, and is rate limited and audited. It is not
+accepted as an ordinary remote login. No restored verifier or authenticator can
+mint a current-generation session before that reset.
 
 User and membership authorization has a monotonic generation captured by each
 privileged mutation. Removal, demotion, or role change advances it in the same
@@ -326,7 +332,10 @@ Restore is a maintenance-barrier operation with a monotonically increasing
 restore generation held outside the replaced data. New mutations and job claims
 pause during replacement, and every in-flight mutation and job commit rechecks
 the generation. Work authorized against the pre-restore generation cannot write
-into restored state.
+into restored state. Every response captures the generation and rechecks it
+before headers and each streamed chunk. Restore closes new readers and drains or
+terminates existing readers before replacement, so loaders, display SSE, exports,
+and diagnostics cannot publish across the boundary.
 
 Restore marks every pending or leased externally mutating job as quarantined.
 It becomes eligible only when a provider-supported idempotency key proves replay
@@ -410,6 +419,12 @@ before recovery is revoked or quarantined and cannot authenticate afterward;
 the user may explicitly re-enroll a still-trusted device only from the recovered
 session. Email links store only verifiers,
 expire within 15 minutes, and are rate-limited by address, source, and service.
+During the delay, any current passkey holder can sign a single-use cancellation
+that advances the recovery generation, freezes email recovery, and preserves the
+existing authenticators. A compromised inbox cannot override that signed veto;
+resuming recovery requires the separately verified manual recovery process and
+not merely another email link. Every initiation, veto, freeze, and completion is
+notified through all configured independent channels and audited.
 Hosted WebAuthn, session lifetime, revocation, CSRF, recent-authentication, and
 recovery rules meet the same or stronger gates as standalone authentication.
 Optional social login may be linked only as a convenience and is never the sole
@@ -567,8 +582,10 @@ each organization. The open self-hosted product has no license or per-seat fee.
 Stripe is the private hosted edition's first billing adapter. Stripe Checkout
 collects payment details and Stripe Customer Portal manages payment methods and
 cancellation; Seriously never handles raw card data. Signed Stripe webhooks are
-verified over exact raw bytes, stored idempotently, and reconciled by scheduled
-jobs. Browser redirects and client claims never activate entitlements. Seriously
+read through a bounded streaming ingress with byte, total-time, idle-read,
+concurrency, and pre-authentication source/deployment rate limits, then verified
+over the exact raw bytes, stored idempotently, and reconciled by scheduled jobs.
+Browser redirects and client claims never activate entitlements. Seriously
 stores its own auditable subscription, price-version, seat-count, invoice, and
 entitlement state keyed to opaque Stripe identifiers, so domain authorization
 does not call Stripe synchronously. Seat changes update subscription quantity
@@ -593,6 +610,11 @@ dashboard clients use the trust-scoped display SDK described in
 [Client SDK architecture](SDK_ARCHITECTURE.md); the TypeScript implementation is
 not the wire contract, and Python, Go, and Rust clients share its conformance
 suite.
+
+The [remote-control-ready architecture](REMOTE_CONTROL.md) extends the collector
+into an outbound bridge while preserving these transports and trust boundaries.
+Remote command execution is deliberately deferred; no early component exposes a
+generic shell or relies on terminal scraping.
 
 ```text
 Self-hosted VM/LXC:  React Router Node server + SQLite
