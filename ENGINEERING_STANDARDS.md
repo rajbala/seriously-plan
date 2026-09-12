@@ -41,13 +41,17 @@ automated enforcement mechanism or a recorded plan to add one.
 
 ## Monorepo-managed SDKs
 
+The normative package, language, trust-boundary, generation, and compatibility
+design is specified in [Client SDK architecture](SDK_ARCHITECTURE.md).
+
 Every external client uses a versioned public workspace package: display,
 collector, remote extension, and administration clients. Applications do not
 duplicate authentication, request construction, pagination, retries, error
 decoding, SSE cursor handling, or telemetry signing.
 
-Wire schemas are canonical and versioned. SDK types, validators, fixtures, and
-compatibility tests are generated from those schemas or share the same source.
+Language-neutral wire schemas are canonical and versioned. SDK types,
+validators, fixtures, and compatibility tests are generated from those schemas
+or share the same source.
 SDKs use semantic compatibility rules and negotiate declared protocol
 capabilities. CI tests the oldest supported client against the newest server and
 the newest client against the oldest supported server. Unsupported major

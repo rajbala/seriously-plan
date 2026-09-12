@@ -13,7 +13,10 @@ tested public/private dependency boundary.
 - Establish public package boundaries and server/client import rules.
 - Define domain IDs, clock, crypto, database, secret, and job contracts.
 - Establish purpose-specific database ports and one SQLite/D1 contract suite.
-- Establish canonical wire schemas and monorepo-managed client SDK packages.
+- Establish canonical OpenAPI 3.1, JSON Schema, and SSE schemas and generate
+  monorepo-managed TypeScript and Python display and collector SDK packages.
+- Enforce trust-scoped display, collector, extension, administration, and widget
+  dependency boundaries, including inspection of the built display artifact.
 - Define extension manifests, capability boundaries, scaffold tooling, local
   harness, conformance tests, and the machine-readable quality checklist.
 - Build a minimal Node/SQLite self-hosted app.
@@ -26,7 +29,8 @@ tested public/private dependency boundary.
 Workers/D1; the private Worker consumes a pinned public package; clean public CI
 has no access to private source. Import-boundary and artifact checks enforce the
 engineering standards; SQLite and D1 pass the same initial database contracts;
-generated/shared SDK validators pass cross-version fixtures; and a scaffolded
+TypeScript and Python SDKs pass the same cross-runtime protocol and streaming
+fixtures; generated/shared validators pass cross-version fixtures; and a scaffolded
 reference extension passes its conformance and quality gates.
 
 ## Phase 1 — useful standalone dashboard
@@ -118,6 +122,8 @@ backup, restore, and installation-setting operations.
 data.
 
 - Versioned provider SDK and contract-test kit.
+- Official Go display and collector clients generated from the canonical public
+  contract, plus the language-neutral extension conformance harness.
 - Provider configuration and credential schemas.
 - Normalized records, atomic synchronization checkpoints, cursors, health, and
   failure injection between checkpoint operations.
@@ -254,8 +260,8 @@ and use an isolated, metered Workers/D1 service.
   protection.
 - Tenant-scoped hosted repositories and composite schema constraints.
 - Per-tenant encryption derivation.
-- Stripe billing at USD $5 per billable person per month, versioned seat counts,
-  webhook reconciliation, grace, suspension, and deletion separation.
+- Stripe billing at USD $5 per billable seat-month, versioned concurrent seat
+  time, webhook reconciliation, grace, suspension, and deletion separation.
 - Managed backup/export and hosted-to-self-hosted migration.
 - Operational audit log and separately authenticated support console.
 - Two-tenant adversarial isolation suite for every repository.
@@ -277,11 +283,14 @@ least one owner on D1.
 Hosted authentication tests cover passkey enrollment and multiple credentials;
 email-link expiry, replay, verifier storage, and rate limits; delayed recovery
 notifications; session invalidation; mandatory new-passkey registration; and
-recent-authentication enforcement across all organizations belonging to one
-identity. Social identity failure cannot block recovery.
+revocation or quarantine of every pre-recovery authenticator; explicit
+re-enrollment from the recovered session; and recent-authentication enforcement
+across all organizations belonging to one identity. Social identity failure
+cannot block recovery.
 
-Billing tests calculate one seat per distinct active human organization member,
-exclude invitations and machine identities, and cover joins, removals,
+Billing tests integrate concurrently active human organization memberships over
+the billing period, exclude invitations and machine identities, and cover
+instantaneous member replacement without double charging, joins, removals,
 cross-organization membership, proration, cancellation, failed payment, grace,
 and suspension. Exact-raw-body Stripe signature tests, duplicate and reordered
 webhooks, missed-webhook reconciliation, stale browser redirects, and concurrent
@@ -306,8 +315,10 @@ Restoring a shared D1 snapshot from before a completed purge cannot unwrap or
 recover the tenant because the external key authority retains a non-rollbackable
 tombstone; this is tested after the retention deadline.
 
-A hosted export restored into the public edition invokes the installer-bound
-local-owner bootstrap, imports no hosted identity or membership table, rejects
+A hosted export is encrypted and authenticated to recipient-held recovery
+material before leaving the hosted boundary. Restoring it into the public
+edition invokes the installer-bound local-owner bootstrap, imports no hosted
+identity or membership table, rejects
 all hosted sessions and machine credentials, reissues scoped local credentials,
 and proves the migrated dashboards and decrypted provider configuration are
 administrable.
@@ -318,20 +329,22 @@ operations, tenant purge, and retention jobs, while linked corrections preserve
 the original record and tamper evidence verifies. Rewritten and internally
 re-chained D1 snapshots, including alteration of the newest record, fail against
 per-commit externally sequenced authenticated receipts. Authority outage and
-disaster-recovery tests fail destructive actions closed and reject rollback of
+disaster-recovery tests fail every operations action closed and reject rollback of
 its generation. Step-up tests enforce a five-minute,
 single-use assertion bound to actor, capability, target, request, and reason and
 reject stale, replayed, or substituted assertions.
 
 Fault injection at every audit prepare, intent, finalize, and apply boundary
-proves retries are idempotent, destructive state is never applied without its
-final receipt, reservations can be aborted, and finalized-but-unapplied intents
+proves retries are idempotent, mutations are never applied and read-only results
+are never released without a final receipt, reservations can be aborted, and finalized-but-unapplied intents
 are recoverable without unexplained sequence gaps.
 
 Restore tests quarantine all externally mutating jobs and permit execution only
 after durable idempotency proof or reconciliation using non-rollback evidence.
-Dispatch races prove an action intent's generation-checked claim is ordered with
-session, membership, and tenant revocation before any provider request is sent.
+Dispatch races before and during provider requests prove an action intent's
+generation-checked claim and external restore-generation check are ordered with
+session, membership, tenant revocation, and restore replacement; no provider
+request straddles database replacement without a durable outcome.
 Authority-outage and concurrent-purge tests prove encrypted customer access
 fails closed rather than using stale key status.
 Pre-removal and pre-suspension D1 snapshots cannot restore membership or tenant
@@ -348,6 +361,12 @@ external report tombstones are applied before retained or public reads.
 Leaderboard reads during an authority outage after such a restore fail closed
 and never expose an alias or report whose deletion cannot be disproved.
 
+Usage fixtures define canonical half-open UTC bucket instants and IANA-time-zone
+display projection and cover daylight-saving 23-hour and 25-hour local days.
+Privileged stream and export tests revoke a session during headers, delivery,
+generation, and backpressure and prove no later chunk is released beyond the
+five-second revocation bound.
+
 DEK-rotation races cover every tenant-encrypted write path, including dashboards,
 records, events, jobs, and exports; no retiring-generation ciphertext commits
 after cutover.
@@ -358,9 +377,14 @@ after cutover.
 projects are supportable by new users.
 
 - Replace the Lenovo proof page with the display enrollment client.
+- Publish the official Rust display and collector clients and run the Lenovo
+  application through the same display conformance suite used by TypeScript,
+  Python, and Go.
 - Add first-boot Wi-Fi and Hub selection UX without embedding credentials.
 - Pin and verify a released Seriously display artifact in the Lenovo build.
 - Publish installation, threat-model, privacy, backup, and recovery guides.
+- Publish and continuously test the TypeScript, Python, Go, and Rust SDK support
+  matrix, examples, provenance, and minimum-runtime policy.
 - Establish version support, vulnerability reporting, and release cadence.
 - Publish and enforce the extension manifest, scaffold, conformance kit, quality
   checklist, managed SDK support policy, and database adapter contract.

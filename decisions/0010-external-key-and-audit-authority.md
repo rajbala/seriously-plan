@@ -16,8 +16,9 @@ The hosted edition uses a small separately administered authority outside the
 customer D1 backup lifecycle. It stores non-rollbackable tenant-key tombstones
 and authorization generations for membership and tenant lifecycle transitions.
 It issues monotonically sequenced authenticated receipts and retains replayable
-canonical records for every operations audit commit. Destructive operations fail closed when the authority is
-unavailable. Access uses workload identity, least privilege, quorum-protected
+canonical records for every operations audit commit. Every operations action
+fails closed when the authority is unavailable. Access uses workload identity,
+least privilege, quorum-protected
 administration, immutable audit, encrypted geographically separate backups, and
 regular restore and reconciliation drills.
 
@@ -25,10 +26,15 @@ The authority exposes narrow tombstone, key-status, authorization-generation,
 receipt-append, audit-replay, and verification operations—never dashboard or
 provider records or a general database API.
 Receipt creation follows an idempotent prepare/finalize protocol with a durable
-D1 intent between those phases. The destructive state change occurs only after
-finalization and receipt verification, in the same D1 transaction that completes
-the intent. Reconcilers abort unused reservations or finish finalized intents;
-protocol state distinguishes these from sequence tampering.
+D1 intent between those phases. A state change occurs, or a read-only result is
+released, only after finalization and receipt verification. Reconcilers abort
+unused reservations or finish finalized intents; protocol state distinguishes
+these from sequence tampering.
+
+Membership and lifecycle changes use a denial-first generation: the authority
+records a pending generation that all checks deny, D1 applies the change, and
+the authority then finalizes it. Failure between phases remains denied and is
+reconciled rather than preserving stale access.
 
 ## Alternatives
 

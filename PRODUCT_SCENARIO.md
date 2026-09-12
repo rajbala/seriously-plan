@@ -25,7 +25,7 @@ widgets.
 │ Claude Code     project-a      ● WORKING       18m        │
 │   Implement billing parity                                │
 │ Codex           project-b      ◉ NEEDS INPUT    7m        │
-│   "Should I modify the D1 migration?"                    │
+│   Structured response required                            │
 ├───────────────────────────────────────────────────────────┤
 │ TODAY                                                     │
 │ Claude     18.4M tokens     $22.81                        │
@@ -86,6 +86,10 @@ log strings is prohibited. If no supported structured signal proves a state, the
 collector reports `unknown`, including `evidenceKind`, `observedAt`, and
 `authoritative | inferred | unknown` confidence. The UI never presents an
 inference as authoritative.
+
+Prompt or conversation content is not collected or displayed by default. A
+source may expose a separately consented, narrowly scoped content capability,
+but status and attention features must work from structured metadata without it.
 
 ## End-to-end acceptance
 

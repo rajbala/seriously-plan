@@ -17,6 +17,7 @@ plan of Seriously.
 - [Public/private repository boundary](REPOSITORY_BOUNDARIES.md)
 - [Delivery roadmap](ROADMAP.md)
 - [Engineering and extension standards](ENGINEERING_STANDARDS.md)
+- [Client SDK architecture](SDK_ARCHITECTURE.md)
 - [Pull-request and Codex review process](PR_PROCESS.md)
 - [Initial decision records](decisions/README.md)
 

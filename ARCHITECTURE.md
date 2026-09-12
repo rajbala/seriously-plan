@@ -267,6 +267,12 @@ generation. Revoking or rotating one session advances that session generation,
 so an in-flight mutation authorized by the old session cannot commit even when
 the user and role remain otherwise valid.
 
+Privileged streaming responses capture the same generation and recheck it before
+headers, before every emitted chunk, and at least every five seconds while
+backpressured or generating data. Revocation closes exports, diagnostics, and
+other long reads within five seconds and prevents any later chunk from being
+published.
+
 Provider secrets are encrypted before storage using a master key supplied by
 the deployment. This includes OAuth client secrets and refresh tokens, API keys,
 private keys, webhook secrets, and other provider credentials. Displays never
@@ -327,6 +333,10 @@ It becomes eligible only when a provider-supported idempotency key proves replay
 safe or reconciliation against evidence held outside the restored snapshot
 establishes the outcome. Otherwise it remains `indeterminate` for an audited
 human decision; restore never blindly redispatches it.
+The dispatch claim also compares the external restore generation. Restore first
+closes claims and drains all dispatch-capable work to a durable pre-dispatch or
+post-dispatch state before replacement; it cannot replace the database while a
+provider request is between linearization and recorded outcome.
 
 Backups use adapter-provided point-in-time snapshots. SQLite uses its online
 backup/snapshot facility rather than copying database files; D1 uses its
@@ -395,7 +405,10 @@ expiring, single-use verified-email link bootstraps the account, after which a
 passkey is the primary authenticator. Users are prompted to register at least
 two passkeys. Email-based recovery is delayed, notifies existing verified
 channels, invalidates all sessions and prior recovery attempts, and requires a
-new passkey before privileged access resumes. Email links store only verifiers,
+new passkey before privileged access resumes. Every authenticator registered
+before recovery is revoked or quarantined and cannot authenticate afterward;
+the user may explicitly re-enroll a still-trusted device only from the recovered
+session. Email links store only verifiers,
 expire within 15 minutes, and are rate-limited by address, source, and service.
 Hosted WebAuthn, session lifetime, revocation, CSRF, recent-authentication, and
 recovery rules meet the same or stronger gates as standalone authentication.
@@ -423,10 +436,14 @@ material. Only narrowly documented audit or legal-retention records may remain,
 and they contain no recoverable customer secrets or dashboard content.
 
 Hosted membership removals, role changes, suspension, recovery, and deletion
-advance authorization generations in the external authority before D1 reflects
-the transition. Hosted restore remains closed until it reconciles every restored
-membership and lifecycle generation with this non-rollback state; older rows are
-disabled or corrected before authentication resumes.
+use an idempotent denial-first transition. The authority first records a pending
+generation that request-time, commit-time, and stream-time checks treat as
+denied; D1 applies the transition; then the authority finalizes it. D1 failure
+therefore leaves access closed while reconciliation retries instead of leaving
+old authorization effective. Hosted restore remains closed until it reconciles
+every restored
+membership and lifecycle generation with this non-rollback state; older rows
+are disabled or corrected before authentication resumes.
 
 Cross-tenant operations use a separate private interface, identity store, and
 session boundary. Operations roles grant named, revocable capabilities such as
@@ -451,12 +468,14 @@ organization's allocation.
 
 Operations audit storage is append-only at repository and database boundaries.
 No support, purge, retention, or tenant repository exposes update or delete for
-audit facts. Corrections append a linked superseding record. Audited destructive
-operations use a recoverable prepare/finalize protocol: the authority first
+audit facts. Corrections append a linked superseding record. Every operations
+action, including lookups, diagnostics, and export authorization, uses a
+recoverable prepare/finalize protocol: the authority first
 reserves a sequence for the operation digest; D1 then commits an audit intent but
 does not apply the destructive transition; the authority finalizes its
 authenticated receipt only for that persisted intent; and a final D1 transaction
-verifies the receipt, applies the transition, and marks the intent complete.
+verifies the receipt, applies any transition, and marks the intent complete.
+Read-only results are not released until the receipt is finalized and persisted.
 Retries are idempotent at every phase. Reserved sequences can be explicitly
 aborted, while finalized receipts and pending intents are reconciled until the
 final D1 transaction succeeds. Thus an authority failure cannot leave an applied
@@ -497,6 +516,10 @@ signs canonical versioned reports containing a pseudonymous installation ID,
 monotonic sequence, time bucket, and aggregate input, output, and cache tokens by
 provider and model. Reports exclude prompts, transcripts, source, repository
 names, user identities, credentials, session identifiers, and file paths.
+Time buckets are canonical half-open intervals of UTC instants. A dashboard may
+project them into its configured IANA time zone, but local clock labels never
+define report identity; daylight-saving transitions therefore produce correct
+23- or 25-hour local days without duplicated or missing instants.
 The private signing key is stored through the envelope-encrypted `SecretStore`
 and is never reused for Hub authentication.
 
@@ -531,9 +554,12 @@ unavailable; an outage cannot be interpreted as “not deleted.”
 
 ## Hosted pricing and billing
 
-Seriously Cloud launches at **USD $5 per billable person per month**. A billable
-person is one distinct active human member of an organization during the billing
-period. Pending invitations, suspended or removed memberships, displays,
+Seriously Cloud launches at **USD $5 per billable seat-month**. Seat quantity is
+the number of concurrently active human organization memberships at each instant;
+the invoice is the time-prorated integral of that quantity over the monthly
+period. Replacing one member with another at the same instant keeps quantity
+unchanged and does not charge two seats. Pending invitations, suspended or
+removed memberships, displays,
 collectors, service credentials, and provider integrations are not seats. The
 same global identity in two independently billed organizations is one seat in
 each organization. The open self-hosted product has no license or per-seat fee.
@@ -561,6 +587,12 @@ set of D1 shards. Database-per-customer and platform-specific coordination are
 not required for the initial service.
 
 ## Deployment shapes
+
+All deployment shapes expose the same language-neutral public protocol. Actual
+dashboard clients use the trust-scoped display SDK described in
+[Client SDK architecture](SDK_ARCHITECTURE.md); the TypeScript implementation is
+not the wire contract, and Python, Go, and Rust clients share its conformance
+suite.
 
 ```text
 Self-hosted VM/LXC:  React Router Node server + SQLite
