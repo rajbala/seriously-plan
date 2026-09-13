@@ -144,13 +144,17 @@ tenant plus an operations capability and audit context. Boundary tests reject
 customer sessions, revoked operations identities, missing or mismatched tenant
 targets, and every capability escalation.
 
-## Licensing decision gate
+## Licensing policy
 
-Before accepting external contributions, choose and document either:
+The owner selected Apache-2.0 for `seriously`, the complete single-installation
+product. It is the only repository intended for eventual open-source publication.
+Its source, workspace metadata, packaged license files, and contribution policy
+must consistently identify Apache-2.0.
 
-- Apache-2.0 for broad adoption and a simple private dependency relationship;
-  or
-- AGPL-3.0 plus a commercial license and an appropriate contributor agreement.
+`seriously-cloud` and `seriously-plan` remain private; the public product's license
+does not apply to either repository's original source. Public dependency packages
+retain their own licenses when consumed by the hosted product.
 
-This is a legal and governance decision, not merely a build setting, and should
-be reviewed by qualified counsel.
+Repository visibility and protected package publishing are separate operations.
+Selecting the source license does not publish packages, change repository
+visibility, or waive the release, provenance, compatibility, and review gates.
