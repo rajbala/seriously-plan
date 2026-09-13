@@ -1,10 +1,10 @@
 # Seriously planning repository
 
-This repository is the public source of truth for the architecture and delivery
-plan of Seriously.
+This private repository is the source of truth for the architecture and delivery
+plan of Seriously. It is not intended for open-source publication.
 
-- [`seriously`](https://github.com/rajbala/seriously) is the complete,
-  open-source, single-tenant product.
+- [`seriously`](https://github.com/rajbala/seriously) is the complete single-tenant
+  product, licensed under Apache-2.0 and intended for eventual open-source publication.
 - [`seriously-cloud`](https://github.com/rajbala/seriously-cloud) is the private,
   multi-tenant hosted product deployed on Cloudflare Workers.
 - `seriously-cloud` may depend on released packages from `seriously`.

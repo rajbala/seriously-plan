@@ -8,7 +8,8 @@ before the next phase becomes the primary focus.
 **Outcome:** both implementation repositories have reproducible builds and a
 tested public/private dependency boundary.
 
-- Decide license and contribution policy for `seriously`.
+- Enforce the selected Apache-2.0 license and contribution policy for `seriously`;
+  only that repository is intended for eventual open-source publication.
 - Scaffold React Router v7, TypeScript, pnpm, linting, Vitest, and Playwright.
 - Establish public package boundaries and server/client import rules.
 - Define domain IDs, clock, crypto, database, secret, and job contracts.
