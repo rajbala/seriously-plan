@@ -27,6 +27,8 @@ The public repository contains:
 - official providers and collectors;
 - authentication, encryption, backup, restore, import, and export;
 - SQLite and single-installation D1 adapters;
+- public release-manifest and update contracts, update UI, verification and
+  narrowly scoped local deployment updaters;
 - container and Workers deployment instructions; and
 - all tests required to validate self-hosting.
 
@@ -52,8 +54,10 @@ Suggested packages:
 
 ## Private repository: `seriously-cloud`
 
-The private repository contains only hosted-service concerns:
+The private repository contains hosted-service and release-distribution concerns:
 
+- the initial React Router Framework Mode release catalog and private artifact
+  download authorization, implementing public update contracts;
 - organization creation, membership, invitations, roles, and ownership
   lifecycle;
 - authenticated organization selection and tenant resolution;
@@ -158,3 +162,9 @@ retain their own licenses when consumed by the hosted product.
 Repository visibility and protected package publishing are separate operations.
 Selecting the source license does not publish packages, change repository
 visibility, or waive the release, provenance, compatibility, and review gates.
+
+The [managed-update phase](MANAGED_UPDATES.md) starts the cloud product surface
+with release distribution only. Consuming verified release metadata and published
+artifacts is not a private-source build dependency. The self-hosted Hub remains
+operable without the catalog; credentials used for private release downloads grant
+no remote-control or tenant access.

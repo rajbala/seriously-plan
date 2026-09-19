@@ -3,6 +3,24 @@
 Each phase is delivered through small pull requests and must pass its exit gate
 before the next phase becomes the primary focus.
 
+## Immediate next phase — Phase 1.5: managed updates
+
+After the current portable-installation/onboarding work, the next primary focus
+is [managed server updates](MANAGED_UPDATES.md), ahead of the remaining Phase 2
+work. Deliver owner-facing **Check for updates** and **Update now**, backed by a
+minimal signed release catalog in `seriously-cloud` using React Router Framework
+Mode. Support managed native/systemd and a documented managed OCI installation;
+other deployment methods expose check/status and accurate manual instructions.
+
+The phase includes a narrow host updater, verified pre-upgrade backups, migration
+and readiness checks, durable progress, and exercised recovery. Cloud serves
+release metadata and authorized downloads; it does not remotely control the Hub
+or gate its ongoing operation. Private GitHub Release distribution remains in
+force. Hosted tenancy, billing, client updates, and unattended updates are out of
+scope. The linked specification defines five reviewable slices and the exit gate.
+Existing numbered phases retain their scope; Phase 6 still requires the broader
+Node/SQLite and Workers/D1 supported-version upgrade matrix.
+
 ## Phase 0 — foundations and contracts
 
 **Outcome:** both implementation repositories have reproducible builds and a

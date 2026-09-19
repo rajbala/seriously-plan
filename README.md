@@ -16,6 +16,7 @@ plan of Seriously. It is not intended for open-source publication.
 - [Product and architecture](ARCHITECTURE.md)
 - [Public/private repository boundary](REPOSITORY_BOUNDARIES.md)
 - [Delivery roadmap](ROADMAP.md)
+- [Next phase: managed server updates](MANAGED_UPDATES.md)
 - [Engineering and extension standards](ENGINEERING_STANDARDS.md)
 - [Client SDK architecture](SDK_ARCHITECTURE.md)
 - [Remote-control-ready architecture](REMOTE_CONTROL.md)
@@ -36,4 +37,6 @@ plan of Seriously. It is not intended for open-source publication.
 
 ## Status
 
-The repositories are newly created. Phase 0 in the roadmap is the next work.
+Portable installation and onboarding are the current delivery focus. The next
+phase is [Phase 1.5 — managed updates](MANAGED_UPDATES.md), before resuming the
+remaining numbered roadmap. This sequencing does not waive their exit gates.
