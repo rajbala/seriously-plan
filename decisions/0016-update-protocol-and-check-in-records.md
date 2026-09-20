@@ -71,6 +71,20 @@ so the worst case is a freeze no longer than one manifest's validity rather
 than an indefinite one. A build predating any release has no floor and must
 present its first check as unanchored.
 
+**Replay state belongs to a trust root, not to a URL.** A sequence is only
+meaningful within the signing authority that issued it, so the recorded
+last-accepted sequence — and the bootstrap floor — are stored against the trust
+root they came from. This settles what a *compatible mirror* is: one that serves
+the byte-identical signed manifests of the catalog it mirrors. It preserves the
+sequence space because it does not issue sequences at all, and a Hub pointed at
+one needs no reset. Anything that re-signs under its own trust root with its own
+numbering is a different catalog, not a mirror, and switching to it is an
+explicit operator action that installs a new trust root and starts that root's
+replay state fresh. Without that binding, a mirror whose numbering began below
+the official one would have every valid manifest rejected by the floor, and the
+same rejection would recur after any catalog change once a higher sequence had
+been persisted.
+
 **Check-ins are recorded, identification stays optional, and the record needs a
 bound.** The catalog keeps one upserted row per offered installation identifier
 (first and last check, count, last reported build and platform, last decision,
@@ -99,15 +113,26 @@ Before this service is exposed publicly it must carry, as release gates:
 - a **retention window** for each table — deleting an identifier that has
   stopped checking, and deleting aggregate buckets older than the window, which
   bounds the aggregate at (window in days x buckets per day);
-- a **cardinality ceiling** past which a new identifier is counted in the
-  aggregate only and given no row; and
-- a **per-address rate limit**, which is what keeps a single day's bucket count
-  near the genuine fleet's version spread rather than near an attacker's
-  imagination.
+- a **cardinality ceiling** for identifiers, past which a new identifier is
+  counted in the aggregate only and given no row;
+- a **bucket ceiling** for the aggregate, which the rate limit alone cannot
+  supply: a limit is per address, so many addresses — a large IPv6 pool costs an
+  attacker nothing — can each spend their quota on different client-reported
+  versions and mint a bucket per version, exhausting storage well inside one
+  retention window. The `version` field is bucketed only when it names a
+  published release; every other value coalesces into one reserved overflow
+  bucket, which bounds a day by (published releases + 1) x the closed
+  enumerations, with a hard per-day bucket count as a backstop; and
+- a **per-address rate limit**, which bounds the cost of producing traffic but
+  not the cardinality it can reach, and so supplements the ceilings above rather
+  than substituting for them.
 
 Until those exist, neither table may be relied on as bounded; the aggregate is
 merely the slower-growing of the two, because it grows with distinct buckets
-rather than with traffic.
+rather than with traffic. Coalescing unknown versions loses the exact version
+string of a development or forged build, which the overflow count and the
+per-installation row still record the existence of; that is the intended
+trade, since an attacker chooses those strings.
 
 **React Router Framework Mode moves to the slice that renders a page.** The
 check and manifest endpoints are a JSON resource API on the existing Worker.
