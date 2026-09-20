@@ -117,7 +117,19 @@ old release above newer releases in catalog-wide replay order, so a fresh
 installation seeded from that renewed manifest would set its bootstrap floor
 above the genuine latest release and then reject it as a replay. Freshness
 between renewals of one release is carried by `publishedAt` and `expiresAt`,
-both of which must move forward, so an older renewal cannot replace a newer one.
+both of which must move forward.
+
+That ordering is enforced at the catalog, which is not where replay protection
+lives, so **the Hub's durable replay state has to carry it too.** Keeping only a
+last-accepted sequence was sufficient while every envelope had its own; now that
+renewals of one release share a sequence, a rolled-back or impersonated catalog
+could serve an earlier renewal and a Hub comparing sequences alone would see
+nothing wrong — then fail its checks when that superseded envelope reached the
+earlier `expiresAt` it carried. A Hub therefore records, against the trust root:
+the highest `catalogSequence` it has accepted, and for each release it has
+accepted, that envelope's `publishedAt`. It refuses a lower sequence as before,
+and refuses an envelope for a release it already holds whose `publishedAt` is
+not later than the one recorded.
 
 **Publication pins `publishedAt` to the catalog's own clock.** It is
 authenticated but signer-chosen, so on its own it would let the holder of a
