@@ -30,9 +30,12 @@ answer:
 
 **Release identity is three fields, each answering one question.** `version` is
 the ordering key, `commit` (with `tree`) is the **source** identity, and
-`catalogSequence` is the catalog's monotonic view counter. A Hub reporting a
-catalog-known version with a different commit is recorded as running an
-unrecognized build and is not offered that same version as an upgrade.
+`catalogSequence` is the catalog's monotonic view counter. The first two are
+*immutable release fields*; the sequence is catalog state about a release
+rather than part of it, and the renewal rule below turns on that distinction.
+A Hub reporting a catalog-known version with a different commit is recorded as
+running an unrecognized build and is not offered that same version as an
+upgrade.
 
 A git commit pins source, not the bytes that source produced. Absent
 reproducible builds, a locally rebuilt, patched-after-build, or otherwise
@@ -100,12 +103,27 @@ than against the time of the check, so a key's `notBefore`/`notAfter` bound when
 it may **sign** and its signatures stay valid for the life of the release.
 `revokedAt` is a separate emergency lever that invalidates every signature a key
 ever made, since a compromised key's past signatures are precisely what an
-attacker replays. And publication accepts a **renewal**: identical release
-identity with a later `expiresAt` and a higher sequence replaces the stored
-envelope in place, while any other difference remains a conflict. Immutability
-is about what a release *is*, not about how long its signed metadata stays
-fresh — which is also what makes recovery from a revocation possible without
-changing any release.
+attacker replays. And publication accepts a **renewal**: identical
+immutable release fields — `release`, `notes`, `compatibility` and `artifacts`
+— with a later `publishedAt` and `expiresAt` replace the stored envelope in
+place, while any other difference remains a conflict. Immutability is about
+what a release *is*, not about how long its signed metadata stays fresh — which
+is also what makes recovery from a revocation possible without changing any
+release.
+
+**A renewal keeps the release's `catalogSequence`.** The sequence orders
+releases, and a renewal does not create one. Advancing it would lift a renewed
+old release above newer releases in catalog-wide replay order, so a fresh
+installation seeded from that renewed manifest would set its bootstrap floor
+above the genuine latest release and then reject it as a replay. Freshness
+between renewals of one release is carried by `publishedAt` and `expiresAt`,
+both of which must move forward, so an older renewal cannot replace a newer one.
+
+**Publication pins `publishedAt` to the catalog's own clock.** It is
+authenticated but signer-chosen, so on its own it would let the holder of a
+retired key backdate into that key's window and keep minting releases, leaving
+`notAfter` bounding nothing. The catalog therefore refuses a manifest whose
+`publishedAt` is not close to its own time of publication.
 
 **Check-ins are recorded, identification stays optional, and the record needs a
 bound.** The catalog keeps one upserted row per offered installation identifier
@@ -211,6 +229,33 @@ per-installation rows — are prerequisites for public exposure, not open-ended
 operational follow-ups. MANAGED_UPDATES' "no persistent installation identifier
 is required" remains true and is now enforced by test; its stronger reading —
 that none is ever recorded — is superseded here.
+
+**Two gaps in the trust model remain open, and are not closed by this record.**
+
+Pinning `publishedAt` at publication stops backdating *through the catalog*. It
+does not make `notAfter` cryptographically binding for a peer facing an
+impersonated catalog: the holder of a retired but unrevoked key can still sign
+a manifest claiming a time inside that key's window, and a verifier comparing
+the window against a signer-chosen field has no independent way to refuse it. A
+Hub that has checked before can require `publishedAt` to advance monotonically,
+which narrows this to a fresh installation — the same bootstrap position the
+sequence floor already has.
+
+`revokedAt` likewise protects a Hub only once it has received the revocation.
+This record defines embedded verification keys and replay state for *release
+manifests*, but no authenticated, monotonically versioned key metadata. An
+impersonated or rolled-back catalog can therefore simply withhold a revocation
+and keep serving manifests signed by the compromised key.
+
+Both gaps need the same missing piece: key metadata signed by an offline root,
+carrying its own version that clients persist and refuse to roll back, plus a
+freshness anchor a client can trust without having checked before. That is the
+root-and-timestamp role structure of The Update Framework, and adopting it is a
+larger architectural commitment than this record should make on its own. Until
+it is decided, the honest statement of the threat model is: a signing key that
+is retired but not revoked, in the hands of an attacker who can also impersonate
+the catalog, can mint releases a fresh installation will accept. Key custody
+after retirement is therefore a live operational requirement, not a formality.
 
 Compromising the serving deployment still cannot mint a release, because it
 holds no signing key. A catalog that is wrong, rolled back or impersonated can
