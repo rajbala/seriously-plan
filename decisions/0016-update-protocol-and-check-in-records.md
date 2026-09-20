@@ -72,27 +72,42 @@ than an indefinite one. A build predating any release has no floor and must
 present its first check as unanchored.
 
 **Check-ins are recorded, identification stays optional, and the record needs a
-bound.** The catalog keeps one upserted row per offered installation identifier (first and last check,
-count, last reported build and platform, last decision, last client address) and
-a bounded daily aggregate that also counts anonymous checks. Omitting the
-identifier must not change the decision, the manifest or the status code, and
-tests assert the two responses are identical. The identifier is 128 bits of
-client-generated randomness, never derived from hardware, hostname, email or
-licence, and resettable by the owner. The client address is read only from the
-edge-set `CF-Connecting-IP`; a caller-supplied forwarding header is never read,
-and an absent address is recorded as absent.
+bound.** The catalog keeps one upserted row per offered installation identifier
+(first and last check, count, last reported build and platform, last decision,
+last client address) and a daily aggregate that also counts anonymous checks.
+Omitting the identifier must not change the decision, the manifest or the
+status code, and tests assert the two responses are identical. The identifier
+is 128 bits of client-generated randomness, never derived from hardware,
+hostname, email or licence, and resettable by the owner. The client address is
+read only from the edge-set `CF-Connecting-IP`; a caller-supplied forwarding
+header is never read, and an absent address is recorded as absent.
 
-Because the identifier is client-chosen, per-installation rows are not
-self-bounding: a client that resets its identifier every check, or a hostile one
-minting a fresh value per request, inserts a row each time. That is the same
-unbounded-storage objection that rejected the event-row alternative, so it needs
-an enforceable answer rather than a deferred policy. Before this service is
-exposed publicly it must carry, as release gates: a retention window after which
-an identifier that has stopped checking is deleted; a cardinality ceiling beyond
-which a new identifier is counted in the aggregate only and given no row; and a
-per-address rate limit. Until those exist, the daily aggregate — bounded by
-construction — is the only record safe to rely on, and the per-installation
-table is a development convenience.
+**Neither table is self-bounding, and the aggregate is not an exception.**
+Because the identifier is client-chosen, per-installation rows grow one per
+distinct identifier: a client that resets its identifier every check, or a
+hostile one minting a fresh value per request, inserts a row each time. The
+daily aggregate grows one row per distinct
+`(day, channel, version, format, os, arch, decision, identified)` bucket, so it
+grows without limit across days even when each day is small, and within a single
+day its cardinality is bounded by closed enumerations in every field except
+`version`, which is client-reported. Both are therefore the same
+unbounded-storage objection that rejected the event-row alternative, and both
+need an enforceable answer rather than a deferred policy.
+
+Before this service is exposed publicly it must carry, as release gates:
+
+- a **retention window** for each table — deleting an identifier that has
+  stopped checking, and deleting aggregate buckets older than the window, which
+  bounds the aggregate at (window in days x buckets per day);
+- a **cardinality ceiling** past which a new identifier is counted in the
+  aggregate only and given no row; and
+- a **per-address rate limit**, which is what keeps a single day's bucket count
+  near the genuine fleet's version spread rather than near an attacker's
+  imagination.
+
+Until those exist, neither table may be relied on as bounded; the aggregate is
+merely the slower-growing of the two, because it grows with distinct buckets
+rather than with traffic.
 
 **React Router Framework Mode moves to the slice that renders a page.** The
 check and manifest endpoints are a JSON resource API on the existing Worker.
@@ -115,18 +130,21 @@ prerequisite for the contract.
   telemetry, which the portability goal rejects.
 - **Record nothing**: leaves the operator unable to see version spread, fleet
   size or whether a release is reaching installations.
-- **Log every check-in as an event row**: unbounded growth for a question a
-  daily aggregate answers.
+- **Log every check-in as an event row**: grows with traffic rather than with
+  distinct buckets, for a question a daily aggregate answers far more cheaply.
+  The aggregate still needs its own retention window, as above; it is the
+  cheaper shape, not an escape from retention.
 
 ## Consequences
 
 The catalog learns which version and platform are deployed, where from and when,
-for installations that choose to say. That is operational telemetry, so it stays in
-the private repository and behind no unauthenticated route. Its retention,
-cardinality and rate-limit gates are prerequisites for public exposure, not
-open-ended operational follow-ups. MANAGED_UPDATES' "no
-persistent installation identifier is required" remains true and is now enforced
-by test; its stronger reading — that none is ever recorded — is superseded here.
+for installations that choose to say. That is operational telemetry, so it stays
+in the private repository and behind no unauthenticated route. Its retention,
+cardinality and rate-limit gates — covering the daily aggregate as well as the
+per-installation rows — are prerequisites for public exposure, not open-ended
+operational follow-ups. MANAGED_UPDATES' "no persistent installation identifier
+is required" remains true and is now enforced by test; its stronger reading —
+that none is ever recorded — is superseded here.
 
 Compromising the serving deployment still cannot mint a release, because it
 holds no signing key. A catalog that is wrong, rolled back or impersonated can
