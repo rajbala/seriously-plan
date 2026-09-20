@@ -61,8 +61,12 @@ local updater behavior; it is not a shell command or script supplied by the API.
 The catalog knows what the latest release is and where its artifacts live. It
 never receives installation credentials, dashboards, provider secrets, recovery
 keys, or backups, and never pushes an execution command to an installation.
-Checks send only the version/platform/format information needed for compatibility;
-no persistent installation identifier or telemetry registration is required.
+Checks send only the version/platform/format information needed for compatibility.
+No persistent installation identifier or telemetry registration is *required*: a
+Hub that omits one receives an identical decision, manifest and status. The
+catalog does record the installations that choose to identify themselves, and
+counts anonymous checks in a bounded daily aggregate, per
+[ADR 0016](decisions/0016-update-protocol-and-check-in-records.md).
 Application logs redact credentials and temporary download grants.
 
 Until source publication, artifacts remain in **private GitHub Releases** as
@@ -159,9 +163,13 @@ instructions; repeated startup or button presses must not erase evidence.
 
 1. Public release/update schemas, compatibility rules, trust model, and shared
    valid/hostile fixtures; define the managed native and Compose support matrix.
-2. React Router Framework Mode composition in `seriously-cloud`, minimal private
-   release catalog and download authorization, CI publication of signed manifests,
-   and a release page. No customer lifecycle routes.
+   **Delivered** in `seriously-cloud` together with the serving catalog: the
+   versioned check and manifest endpoints, signed-envelope publication, and
+   recorded check-ins. See its `docs/update-protocol.md`.
+2. React Router Framework Mode composition in `seriously-cloud`, private
+   download authorization, CI publication of signed manifests, and a release
+   page. No customer lifecycle routes. Framework Mode arrives with the rendered
+   release page rather than ahead of it; the JSON resource API does not need it.
 3. Owner-only Updates UI/API with installed build identity, explicit checking,
    scheduled check controls, stale/offline handling, and adapter capability display.
 4. Narrow local updater and native/systemd execution with durable progress,
