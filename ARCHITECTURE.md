@@ -42,7 +42,11 @@ Codex / Claude Code ---- bridge ------- Hub ---- browser
 - OCI image for conventional self-hosting
 
 The open product supports both Node/SQLite and single-tenant Workers/D1. The
-private hosted product runs on Workers/D1.
+private hosted product runs on Workers/D1. Its first user-facing cloud surface is
+the [managed-update release catalog](MANAGED_UPDATES.md), composed with React
+Router Framework Mode loaders and resource routes. It serves signed metadata and
+authorized artifacts; a separate constrained local updater performs owner-requested
+updates. Catalog availability never gates existing Hub operation.
 
 ## Portability boundary
 

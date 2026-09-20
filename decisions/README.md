@@ -18,6 +18,7 @@ Accepted initial decisions:
 | [0012](0012-hosted-stripe-billing.md) | Hosted billing uses Stripe at $5 per concurrent seat-month. |
 | [0013](0013-hosted-passkey-identity.md) | Hosted identity is passkey-first with verified-email bootstrap and recovery. |
 | [0014](0014-remote-control-ready-bridge.md) | An outbound bridge and durable command boundary are reserved now; control is deferred. |
+| [0015](0015-managed-server-updates.md) | Managed server updates use a minimal cloud release catalog and constrained local updaters. |
 
 New consequential decisions should receive a separate numbered Markdown file
 describing context, decision, alternatives, consequences, and status. Amend a
