@@ -126,10 +126,28 @@ renewals of one release share a sequence, a rolled-back or impersonated catalog
 could serve an earlier renewal and a Hub comparing sequences alone would see
 nothing wrong — then fail its checks when that superseded envelope reached the
 earlier `expiresAt` it carried. A Hub therefore records, against the trust root:
-the highest `catalogSequence` it has accepted, and for each release it has
-accepted, that envelope's `publishedAt`. It refuses a lower sequence as before,
-and refuses an envelope for a release it already holds whose `publishedAt` is
-not later than the one recorded.
+the highest `catalogSequence` it has accepted, and, for each release it has
+accepted an envelope for — keyed by channel and version, whether or not that
+release is the installed one — that envelope's `publishedAt` and a digest of its
+exact bytes. It refuses a lower sequence as before.
+
+**Equal is the ordinary case, and the first wording of this rule refused it.**
+That wording — refuse an envelope whose `publishedAt` is *not later* than the
+one recorded — rejects the equal case, which is what every routine check
+produces: the current manifest is re-fetched and its `publishedAt` is exactly
+what the Hub wrote down last time. A Hub implementing it would accept a release
+once and report every check after it as failed. The rule is therefore two-armed.
+An envelope for a release the Hub has a record for is accepted when its bytes
+are identical to the recorded digest, which changes nothing, or when its
+`publishedAt` is strictly later, which is a renewal and replaces the record. An
+earlier `publishedAt` is refused as a replay. Differing bytes carrying the
+recorded `publishedAt` are refused as a trust fault rather than as a repeat:
+publication returns `unchanged` for identical bytes and otherwise requires
+`publishedAt` to advance, so the catalog cannot have minted both. Resting the
+unchanged arm on bytes rather than on timestamps is deliberate — it settles the
+case that must never fail without depending on how an instant is spelled — and
+`publishedAt` compares as an instant rather than as a string, since a renewal
+signed by different tooling may spell one instant several ways.
 
 **Publication pins `publishedAt` to the catalog's own clock.** It is
 authenticated but signer-chosen, so on its own it would let the holder of a
