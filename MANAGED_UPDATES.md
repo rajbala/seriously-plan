@@ -61,7 +61,8 @@ local updater behavior; it is not a shell command or script supplied by the API.
 The catalog knows what the latest release is and where its artifacts live. It
 never receives installation credentials, dashboards, provider secrets, recovery
 keys, or backups, and never pushes an execution command to an installation.
-Checks send only the version/platform/format information needed for compatibility.
+Checks send the version, build identity (commit/tree), platform and format
+needed for compatibility and for recognizing the installed build.
 No persistent installation identifier or telemetry registration is *required*: a
 Hub that omits one receives an identical decision, manifest and status. The
 catalog does record the installations that choose to identify themselves, and
@@ -163,9 +164,14 @@ instructions; repeated startup or button presses must not erase evidence.
 
 1. Public release/update schemas, compatibility rules, trust model, and shared
    valid/hostile fixtures; define the managed native and Compose support matrix.
-   **Delivered** in `seriously-cloud` together with the serving catalog: the
-   versioned check and manifest endpoints, signed-envelope publication, and
-   recorded check-ins. See its `docs/update-protocol.md`.
+   **Partially delivered.** The wire contract, signed-envelope publication, the
+   versioned check and manifest endpoints and recorded check-ins now exist in
+   `seriously-cloud` (see its `docs/update-protocol.md`), written so the public
+   half can adopt them unchanged. Still open, and still owned by `seriously` per
+   [REPOSITORY_BOUNDARIES](REPOSITORY_BOUNDARIES.md): the public schema and
+   fixture packages, the portable verification and compatibility gates, and the
+   managed native and Compose support matrix. This slice does not close until
+   those land.
 2. React Router Framework Mode composition in `seriously-cloud`, private
    download authorization, CI publication of signed manifests, and a release
    page. No customer lifecycle routes. Framework Mode arrives with the rendered

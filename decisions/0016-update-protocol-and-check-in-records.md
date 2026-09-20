@@ -29,10 +29,22 @@ answer:
 ## Decision
 
 **Release identity is three fields, each answering one question.** `version` is
-the ordering key, `commit` (with `tree`) is the build identity, and
+the ordering key, `commit` (with `tree`) is the **source** identity, and
 `catalogSequence` is the catalog's monotonic view counter. A Hub reporting a
 catalog-known version with a different commit is recorded as running an
 unrecognized build and is not offered that same version as an upgrade.
+
+A git commit pins source, not the bytes that source produced. Absent
+reproducible builds, a locally rebuilt, patched-after-build, or otherwise
+compromised artifact can report the official `version`, `commit` and `tree` and
+match the catalog exactly. This scheme therefore detects a **mismatched version
+claim**, not tampering, and the check response must not be read as attesting to
+what is running. The artifact digest in the signed manifest is the identity that
+actually covers bytes, and the updater verifies it against the downloaded
+artifact at install time. Extending the check payload to report the installed
+artifact digest, or a build attestation measured outside the process reporting
+it, is the path to real installed-build attestation and is deliberately not
+claimed here.
 
 `version` is SemVer 2.0.0 restricted to a bounded subset: no build metadata, a
 bounded prerelease grammar, and a shared valid/hostile fixture corpus that every
@@ -48,8 +60,19 @@ release. Neither alone suffices. An update-check response is therefore advisory:
 the Hub reaches the same decision itself from the signed manifest, its embedded
 trust keys and its durably recorded last-accepted sequence.
 
-**Check-ins are recorded, and identification stays optional.** The catalog keeps
-one upserted row per offered installation identifier (first and last check,
+**A fresh installation has no recorded sequence, so it gets a bootstrap
+anchor.** Otherwise a rolled-back or impersonated catalog could serve any
+still-unexpired older manifest to a Hub that has never checked, and the Hub
+would accept stale metadata as current. Each build therefore treats the
+`catalogSequence` of **its own release manifest** — which it already ships, and
+which is signed — as the floor for its first check, refusing anything below it
+exactly as it refuses a replay later. `expiresAt` bounds the remaining window,
+so the worst case is a freeze no longer than one manifest's validity rather
+than an indefinite one. A build predating any release has no floor and must
+present its first check as unanchored.
+
+**Check-ins are recorded, identification stays optional, and the record needs a
+bound.** The catalog keeps one upserted row per offered installation identifier (first and last check,
 count, last reported build and platform, last decision, last client address) and
 a bounded daily aggregate that also counts anonymous checks. Omitting the
 identifier must not change the decision, the manifest or the status code, and
@@ -58,6 +81,18 @@ client-generated randomness, never derived from hardware, hostname, email or
 licence, and resettable by the owner. The client address is read only from the
 edge-set `CF-Connecting-IP`; a caller-supplied forwarding header is never read,
 and an absent address is recorded as absent.
+
+Because the identifier is client-chosen, per-installation rows are not
+self-bounding: a client that resets its identifier every check, or a hostile one
+minting a fresh value per request, inserts a row each time. That is the same
+unbounded-storage objection that rejected the event-row alternative, so it needs
+an enforceable answer rather than a deferred policy. Before this service is
+exposed publicly it must carry, as release gates: a retention window after which
+an identifier that has stopped checking is deleted; a cardinality ceiling beyond
+which a new identifier is counted in the aggregate only and given no row; and a
+per-address rate limit. Until those exist, the daily aggregate — bounded by
+construction — is the only record safe to rely on, and the per-installation
+table is a development convenience.
 
 **React Router Framework Mode moves to the slice that renders a page.** The
 check and manifest endpoints are a JSON resource API on the existing Worker.
@@ -85,10 +120,11 @@ prerequisite for the contract.
 
 ## Consequences
 
-The catalog learns which builds are deployed, where from and when, for
-installations that choose to say. That is operational telemetry, so it stays in
-the private repository, behind no unauthenticated route, with retention policy
-tracked alongside the rest of the hosted telemetry work. MANAGED_UPDATES' "no
+The catalog learns which version and platform are deployed, where from and when,
+for installations that choose to say. That is operational telemetry, so it stays in
+the private repository and behind no unauthenticated route. Its retention,
+cardinality and rate-limit gates are prerequisites for public exposure, not
+open-ended operational follow-ups. MANAGED_UPDATES' "no
 persistent installation identifier is required" remains true and is now enforced
 by test; its stronger reading — that none is ever recorded — is superseded here.
 
