@@ -85,6 +85,28 @@ the official one would have every valid manifest rejected by the floor, and the
 same rejection would recur after any catalog change once a higher sequence had
 been persisted.
 
+**One rule governs release lifetime.** Manifest `expiresAt`, signing-key
+windows and published-version immutability were specified independently and
+contradicted each other in two ways: an expired release was unrecoverable,
+because every read filters on expiry and publication refused any differing
+bytes for a published version, so a pause in cadence could take a whole channel
+dark with no operator recourse; and an envelope signed during a rotation
+overlap stopped verifying the moment the outgoing key retired, killing a
+release the catalog still served.
+
+They are now derived from one decision. A signature is verified against the
+manifest's own `publishedAt`, which the signed payload authenticates, rather
+than against the time of the check, so a key's `notBefore`/`notAfter` bound when
+it may **sign** and its signatures stay valid for the life of the release.
+`revokedAt` is a separate emergency lever that invalidates every signature a key
+ever made, since a compromised key's past signatures are precisely what an
+attacker replays. And publication accepts a **renewal**: identical release
+identity with a later `expiresAt` and a higher sequence replaces the stored
+envelope in place, while any other difference remains a conflict. Immutability
+is about what a release *is*, not about how long its signed metadata stays
+fresh — which is also what makes recovery from a revocation possible without
+changing any release.
+
 **Check-ins are recorded, identification stays optional, and the record needs a
 bound.** The catalog keeps one upserted row per offered installation identifier
 (first and last check, count, last reported build and platform, last decision,
@@ -113,8 +135,14 @@ Before this service is exposed publicly it must carry, as release gates:
 - a **retention window** for each table — deleting an identifier that has
   stopped checking, and deleting aggregate buckets older than the window, which
   bounds the aggregate at (window in days x buckets per day);
-- a **cardinality ceiling** for identifiers, past which a new identifier is
-  counted in the aggregate only and given no row;
+- an **eviction policy** for identifiers rather than a first-come ceiling. A
+  plain ceiling converts storage exhaustion into denial of registration: a
+  hostile client fills it with its own identifiers and keeps them from aging
+  out by re-checking each inside the retention window, after which every
+  legitimate installation is permanently aggregate-only. Admission must
+  therefore evict the least recently seen row so a new installation can always
+  displace the coldest one, and the ceiling is meaningful against a determined
+  caller only in combination with a fairness or authentication bound;
 - a **bucket ceiling** for the aggregate, which the rate limit alone cannot
   supply: a limit is per address, so many addresses — a large IPv6 pool costs an
   attacker nothing — can each spend their quota on different client-reported
@@ -133,6 +161,18 @@ rather than with traffic. Coalescing unknown versions loses the exact version
 string of a development or forged build, which the overflow count and the
 per-installation row still record the existence of; that is the intended
 trade, since an attacker chooses those strings.
+
+**What these records are not.** The identifier and the reported build both
+arrive from an unauthenticated public endpoint, so any caller can mint
+identifiers and report published versions while staying inside every ceiling
+above. Those ceilings bound storage; they establish nothing about whether a row
+corresponds to a real installation. This data is therefore **untrusted
+check-request metrics** — enough to notice that a release is reaching
+something, useless as a census, and not a basis for any claim about fleet size
+or version spread. Turning it into fleet data needs authenticated or attested
+installation identity, which trades directly against the optional
+identification this record deliberately preserves; that remains an open
+decision rather than a settled one.
 
 **React Router Framework Mode moves to the slice that renders a page.** The
 check and manifest endpoints are a JSON resource API on the existing Worker.
@@ -153,8 +193,8 @@ prerequisite for the contract.
   TypeScript, Python and the updater, with three chances to disagree.
 - **Require an installation identifier**: would make checking conditional on
   telemetry, which the portability goal rejects.
-- **Record nothing**: leaves the operator unable to see version spread, fleet
-  size or whether a release is reaching installations.
+- **Record nothing**: leaves the operator without even the weak signal that a
+  release is reaching something.
 - **Log every check-in as an event row**: grows with traffic rather than with
   distinct buckets, for a question a daily aggregate answers far more cheaply.
   The aggregate still needs its own retention window, as above; it is the
@@ -162,8 +202,9 @@ prerequisite for the contract.
 
 ## Consequences
 
-The catalog learns which version and platform are deployed, where from and when,
-for installations that choose to say. That is operational telemetry, so it stays
+The catalog learns which version and platform are *reported*, from where and
+when, by installations that choose to say — a claim about requests, not about a
+fleet. That is operational telemetry, so it stays
 in the private repository and behind no unauthenticated route. Its retention,
 cardinality and rate-limit gates — covering the daily aggregate as well as the
 per-installation rows — are prerequisites for public exposure, not open-ended

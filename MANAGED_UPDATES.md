@@ -126,9 +126,12 @@ The updater embeds trusted release verification keys. HTTPS and catalog access
 alone do not authorize new executable code. Verify manifest signatures, expiry,
 sequence/replay rules, compatibility and artifact digests before activation;
 reject unknown keys, tampering and unapproved downgrades. Document signed trust-key
-rotation. Release building/signing permissions are separate from ordinary catalog
-serving. Keep the last accepted sequence durably; an old valid manifest cannot
-silently undo a newer release decision. A recovery restore is a distinct local
+rotation, including that a key window bounds when that key may sign rather than
+how long its signatures verify, and that revocation is the separate lever for a
+compromised key. Release building/signing permissions are separate from ordinary
+catalog serving. Keep the last accepted sequence durably, against the trust root
+that issued it; an old valid manifest cannot silently undo a newer release
+decision. A recovery restore is a distinct local
 operator procedure, not a downgrade selected by the catalog.
 
 Use one durable operation journal outside replaceable application files:
