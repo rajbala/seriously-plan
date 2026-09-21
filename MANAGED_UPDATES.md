@@ -61,8 +61,13 @@ local updater behavior; it is not a shell command or script supplied by the API.
 The catalog knows what the latest release is and where its artifacts live. It
 never receives installation credentials, dashboards, provider secrets, recovery
 keys, or backups, and never pushes an execution command to an installation.
-Checks send only the version/platform/format information needed for compatibility;
-no persistent installation identifier or telemetry registration is required.
+Checks send the version, build identity (commit/tree), platform and format
+needed for compatibility and for recognizing the installed build.
+No persistent installation identifier or telemetry registration is *required*: a
+Hub that omits one receives an identical decision, manifest and status. The
+catalog does record the installations that choose to identify themselves, and
+counts anonymous checks in a bounded daily aggregate, per
+[ADR 0016](decisions/0016-update-protocol-and-check-in-records.md).
 Application logs redact credentials and temporary download grants.
 
 Until source publication, artifacts remain in **private GitHub Releases** as
@@ -70,9 +75,23 @@ already approved. The first delivery path uses a narrowly scoped, revocable
 operator-issued release-download credential, stored server-side, with no GitHub
 repository token exposed to clients. The cloud broker authorizes download of an
 exact approved asset and streams it or issues a short-lived asset-bound grant.
-Its GitHub access is read-only and scoped to release distribution. Private
-metadata and artifacts require authorization during this private stage; health
-routes do not reveal them. Revoked/expired credentials fail closed with a useful
+Its GitHub access is read-only and scoped to release distribution.
+
+**Signed release metadata is public; artifact bytes are not.** During the private
+stage, authorization gates the download of an artifact, not the manifest that
+describes it. Requiring a credential to *check* would contradict three
+commitments above — that no cloud account is required to operate the Hub, that an
+expired credential never disables an otherwise working Hub, and that a Hub which
+identifies itself receives the same answer as one that does not — and it is
+backwards for an update system besides: a client must fetch and verify release
+metadata *before* it holds any credential, which is why the trust model puts
+verification keys in the updater rather than an account behind the catalog.
+The cost is accepted rather than waved off: an anonymous caller learns version
+cadence, release notes and artifact digests before source publication. That is
+pre-announcement exposure, not code disclosure, and it ends when the source does.
+Health routes reveal neither metadata nor artifacts.
+
+Revoked/expired credentials fail closed with a useful
 Updates status; they never disable an otherwise working Hub. Issuing credentials
 uses a documented operator procedure, not hosted signup or billing.
 
@@ -121,9 +140,27 @@ The updater embeds trusted release verification keys. HTTPS and catalog access
 alone do not authorize new executable code. Verify manifest signatures, expiry,
 sequence/replay rules, compatibility and artifact digests before activation;
 reject unknown keys, tampering and unapproved downgrades. Document signed trust-key
-rotation. Release building/signing permissions are separate from ordinary catalog
-serving. Keep the last accepted sequence durably; an old valid manifest cannot
-silently undo a newer release decision. A recovery restore is a distinct local
+rotation, including that a key window bounds when that key may sign rather than
+how long its signatures verify, and that revocation is the separate lever for a
+compromised key.
+
+**Authenticated key metadata is a launch blocker, deliberately deferred.** Two
+gaps are known and recorded rather than solved: a key window is verified against
+the manifest's own `publishedAt`, which the signer chooses, so it does not bind a
+peer facing an impersonated catalog; and `revokedAt` protects a Hub only once it
+has *received* the revocation, for which no authenticated, versioned channel
+exists. Together a retired-but-unrevoked key in an attacker's hands, combined
+with catalog impersonation, can mint releases a fresh installation accepts.
+Closing this needs key metadata signed by an offline root, carrying a version
+clients persist and refuse to roll back, plus a freshness anchor for a client
+that has never checked — the root and timestamp roles of The Update Framework.
+That is its own decision record and is not required to complete this phase, whose
+catalog is undeployed and whose installed base is empty. It **is** required before
+the catalog serves anyone outside the operator, and until it lands, key custody
+after retirement is an operational requirement rather than a formality. Release building/signing permissions are separate from ordinary
+catalog serving. Keep the last accepted sequence durably, against the trust root
+that issued it; an old valid manifest cannot silently undo a newer release
+decision. A recovery restore is a distinct local
 operator procedure, not a downgrade selected by the catalog.
 
 Use one durable operation journal outside replaceable application files:
@@ -159,9 +196,18 @@ instructions; repeated startup or button presses must not erase evidence.
 
 1. Public release/update schemas, compatibility rules, trust model, and shared
    valid/hostile fixtures; define the managed native and Compose support matrix.
-2. React Router Framework Mode composition in `seriously-cloud`, minimal private
-   release catalog and download authorization, CI publication of signed manifests,
-   and a release page. No customer lifecycle routes.
+   **Partially delivered.** The wire contract, signed-envelope publication, the
+   versioned check and manifest endpoints and recorded check-ins now exist in
+   `seriously-cloud` (see its `docs/update-protocol.md`), written so the public
+   half can adopt them unchanged. Still open, and still owned by `seriously` per
+   [REPOSITORY_BOUNDARIES](REPOSITORY_BOUNDARIES.md): the public schema and
+   fixture packages, the portable verification and compatibility gates, and the
+   managed native and Compose support matrix. This slice does not close until
+   those land.
+2. React Router Framework Mode composition in `seriously-cloud`, private
+   download authorization, CI publication of signed manifests, and a release
+   page. No customer lifecycle routes. Framework Mode arrives with the rendered
+   release page rather than ahead of it; the JSON resource API does not need it.
 3. Owner-only Updates UI/API with installed build identity, explicit checking,
    scheduled check controls, stale/offline handling, and adapter capability display.
 4. Narrow local updater and native/systemd execution with durable progress,
@@ -192,6 +238,9 @@ grants, insufficient disk, failed backup, interrupted downloads, crashes at each
 durable stage, failed migrations, and failed readiness. A forged catalog cannot
 execute arbitrary commands. Private release assets and server-only credentials
 never appear in unauthenticated responses, browser bundles, logs, or public CI.
+
+Offline-root-signed key metadata and a freshness anchor are not gates for this
+phase, but no public exposure of the catalog ships without them.
 
 The service can be unavailable without breaking existing Hub operation; manual
 checking accurately reports failure and scheduling backs off. Both adapters
