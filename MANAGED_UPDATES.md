@@ -75,9 +75,23 @@ already approved. The first delivery path uses a narrowly scoped, revocable
 operator-issued release-download credential, stored server-side, with no GitHub
 repository token exposed to clients. The cloud broker authorizes download of an
 exact approved asset and streams it or issues a short-lived asset-bound grant.
-Its GitHub access is read-only and scoped to release distribution. Private
-metadata and artifacts require authorization during this private stage; health
-routes do not reveal them. Revoked/expired credentials fail closed with a useful
+Its GitHub access is read-only and scoped to release distribution.
+
+**Signed release metadata is public; artifact bytes are not.** During the private
+stage, authorization gates the download of an artifact, not the manifest that
+describes it. Requiring a credential to *check* would contradict three
+commitments above — that no cloud account is required to operate the Hub, that an
+expired credential never disables an otherwise working Hub, and that a Hub which
+identifies itself receives the same answer as one that does not — and it is
+backwards for an update system besides: a client must fetch and verify release
+metadata *before* it holds any credential, which is why the trust model puts
+verification keys in the updater rather than an account behind the catalog.
+The cost is accepted rather than waved off: an anonymous caller learns version
+cadence, release notes and artifact digests before source publication. That is
+pre-announcement exposure, not code disclosure, and it ends when the source does.
+Health routes reveal neither metadata nor artifacts.
+
+Revoked/expired credentials fail closed with a useful
 Updates status; they never disable an otherwise working Hub. Issuing credentials
 uses a documented operator procedure, not hosted signup or billing.
 
@@ -128,7 +142,22 @@ sequence/replay rules, compatibility and artifact digests before activation;
 reject unknown keys, tampering and unapproved downgrades. Document signed trust-key
 rotation, including that a key window bounds when that key may sign rather than
 how long its signatures verify, and that revocation is the separate lever for a
-compromised key. Release building/signing permissions are separate from ordinary
+compromised key.
+
+**Authenticated key metadata is a launch blocker, deliberately deferred.** Two
+gaps are known and recorded rather than solved: a key window is verified against
+the manifest's own `publishedAt`, which the signer chooses, so it does not bind a
+peer facing an impersonated catalog; and `revokedAt` protects a Hub only once it
+has *received* the revocation, for which no authenticated, versioned channel
+exists. Together a retired-but-unrevoked key in an attacker's hands, combined
+with catalog impersonation, can mint releases a fresh installation accepts.
+Closing this needs key metadata signed by an offline root, carrying a version
+clients persist and refuse to roll back, plus a freshness anchor for a client
+that has never checked — the root and timestamp roles of The Update Framework.
+That is its own decision record and is not required to complete this phase, whose
+catalog is undeployed and whose installed base is empty. It **is** required before
+the catalog serves anyone outside the operator, and until it lands, key custody
+after retirement is an operational requirement rather than a formality. Release building/signing permissions are separate from ordinary
 catalog serving. Keep the last accepted sequence durably, against the trust root
 that issued it; an old valid manifest cannot silently undo a newer release
 decision. A recovery restore is a distinct local
@@ -209,6 +238,9 @@ grants, insufficient disk, failed backup, interrupted downloads, crashes at each
 durable stage, failed migrations, and failed readiness. A forged catalog cannot
 execute arbitrary commands. Private release assets and server-only credentials
 never appear in unauthenticated responses, browser bundles, logs, or public CI.
+
+Offline-root-signed key metadata and a freshness anchor are not gates for this
+phase, but no public exposure of the catalog ships without them.
 
 The service can be unavailable without breaking existing Hub operation; manual
 checking accurately reports failure and scheduling backs off. Both adapters
