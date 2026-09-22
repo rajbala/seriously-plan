@@ -38,6 +38,9 @@ plan of Seriously. It is not intended for open-source publication.
 
 ## Status
 
-Portable installation and onboarding are the current delivery focus. The next
-phase is [Phase 1.5 — managed updates](MANAGED_UPDATES.md), before resuming the
+The current delivery focus is completing personal-account native-plugin hook
+installation as part of usable onboarding: normal agent launch, inspectable hooks,
+and revocable enrollment without daily manual renewal. Portable installation
+work retains its remaining verification gates. After this focused onboarding
+correction, the next primary phase remains [Phase 1.5 — managed updates](MANAGED_UPDATES.md), before resuming the
 remaining numbered roadmap. This sequencing does not waive their exit gates.

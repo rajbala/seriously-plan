@@ -3,9 +3,18 @@
 Each phase is delivered through small pull requests and must pass its exit gate
 before the next phase becomes the primary focus.
 
+## Current focus — personal connection onboarding
+
+Complete the owner-requested personal native-plugin hook installation slice now,
+as an onboarding correction before managed updates: ordinary agent launch without
+a wrapper, inspectable local filtering, revocable enrollment without daily manual
+renewal, and documented client/platform coverage. This pulls forward only that
+installation slice from agent work; it does not start organization APIs or waive
+any numbered phase's exit gate. Portable-installation verification still applies.
+
 ## Immediate next phase — Phase 1.5: managed updates
 
-After the current portable-installation/onboarding work, the next primary focus
+After the current personal-connection onboarding correction, the next primary focus
 is [managed server updates](MANAGED_UPDATES.md), ahead of the remaining Phase 2
 work. Deliver owner-facing **Check for updates** and **Update now**, backed by a
 minimal signed release catalog in `seriously-cloud` using React Router Framework
