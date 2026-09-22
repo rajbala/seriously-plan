@@ -235,6 +235,14 @@ Connection-flood and non-reading-client fixtures prove both runtimes cap streams
 queued bytes, file descriptors, and backpressure duration without affecting
 healthy displays.
 
+## Organization connections — deferred follow-on
+
+After individual native-plugin hook installation, deliver [organization API
+connections and display audiences](ORGANIZATION_CONNECTIONS.md). An administrator
+connects once; server-side policies control own-member, team and organization
+aggregates and separately assigned displays. This is recorded future scope, not
+an expansion of the current hook-installation work.
+
 ## Phase 4 — Codex and Claude Code collectors
 
 **Outcome:** users can see selected coding-agent activity without exposing work

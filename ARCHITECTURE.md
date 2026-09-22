@@ -27,6 +27,11 @@ Codex / Claude Code ---- bridge ------- Hub ---- browser
                                         +-------- Cage display
 ```
 
+Agent sources support two collection paths: individual native-plugin hooks and
+[organization server-side API connections](ORGANIZATION_CONNECTIONS.md). The latter
+and its audience policies are planned, not implemented. Collection authority,
+member visibility and display assignment are separate boundaries.
+
 ## Runtime stack
 
 - TypeScript on an active Node.js LTS release
