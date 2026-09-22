@@ -3,9 +3,18 @@
 Each phase is delivered through small pull requests and must pass its exit gate
 before the next phase becomes the primary focus.
 
+## Current focus — personal connection onboarding
+
+Complete the owner-requested personal native-plugin hook installation slice now,
+as an onboarding correction before managed updates: ordinary agent launch without
+a wrapper, inspectable local filtering, revocable enrollment without daily manual
+renewal, and documented client/platform coverage. This pulls forward only that
+installation slice from agent work; it does not start organization APIs or waive
+any numbered phase's exit gate. Portable-installation verification still applies.
+
 ## Immediate next phase — Phase 1.5: managed updates
 
-After the current portable-installation/onboarding work, the next primary focus
+After the current personal-connection onboarding correction, the next primary focus
 is [managed server updates](MANAGED_UPDATES.md), ahead of the remaining Phase 2
 work. Deliver owner-facing **Check for updates** and **Update now**, backed by a
 minimal signed release catalog in `seriously-cloud` using React Router Framework
@@ -234,6 +243,14 @@ than polling resources itself.
 Connection-flood and non-reading-client fixtures prove both runtimes cap streams,
 queued bytes, file descriptors, and backpressure duration without affecting
 healthy displays.
+
+## Organization connections — deferred follow-on
+
+After individual native-plugin hook installation, deliver [organization API
+connections and display audiences](ORGANIZATION_CONNECTIONS.md). An administrator
+connects once; server-side policies control own-member, team and organization
+aggregates and separately assigned displays. This is recorded future scope, not
+an expansion of the current hook-installation work.
 
 ## Phase 4 — Codex and Claude Code collectors
 

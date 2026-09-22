@@ -20,6 +20,7 @@ Accepted initial decisions:
 | [0014](0014-remote-control-ready-bridge.md) | An outbound bridge and durable command boundary are reserved now; control is deferred. |
 | [0015](0015-managed-server-updates.md) | Managed server updates use a minimal cloud release catalog and constrained local updaters. |
 | [0016](0016-update-protocol-and-check-in-records.md) | Releases are identified by ordered version plus git build identity; check-ins are recorded and identification stays optional. |
+| [0017](0017-agent-connections-and-display-audiences.md) | Personal plugins and organization APIs feed separately authorized dashboard audiences. |
 
 New consequential decisions should receive a separate numbered Markdown file
 describing context, decision, alternatives, consequences, and status. Amend a
