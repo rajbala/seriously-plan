@@ -40,6 +40,24 @@ Use existing collector enrollment, source identity, normalized records,
 validation, ingestion, and database adapters. Do not introduce a second collector
 protocol, provider-specific dashboard, or parallel analytics event model.
 
+Personal ingestion requires a server-recorded, immutable credential binding to
+installation/tenant, personal subject, source, and allowed record kinds. The
+subject is the authenticated enrolling user, never a user ID asserted by the
+collector payload. Existing unbound installation collectors cannot populate a
+member's personal history; require explicit personal re-enrollment. Rotation
+preserves the subject and revocation prevents further writes.
+
+The named `manage_own_personal_collectors` capability lets each active user,
+including members and viewers, enroll and revoke only their own personal sources.
+It does not grant integration administration or management of other collectors.
+An administrator cannot enroll a personal source as another user. In hosted
+mode, the server verifies selected-organization membership and binds both that
+tenant and the global user identity. One identity in two organizations has
+separate credentials, histories, and queries; organization switching cannot
+retarget a credential or merge history. Membership removal/suspension invalidates
+access through the existing lifecycle checks. No organization role implicitly
+grants access to another user's personal analytics.
+
 Activity-only hooks do not establish token usage. Before implementing a usage
 adapter, record the supported structured source, its documented fields and
 units, client coverage, required consent, and limitations. Supported provider
@@ -141,18 +159,51 @@ if that evidence has expired, reject the correction explicitly rather than
 incrementing an aggregate blindly. Never recreate expired history from a latest
 session state.
 
-A user can export retained usage, repository attribution, and activity metadata
-through the existing authenticated export facilities. Deleting an observation,
+The named `export_own_personal_analytics` capability is available to every active
+user, including members and viewers, through `GET /personal/analytics/export`.
+Reuse existing export serialization and delivery, but bind its query to the
+authenticated personal subject and installation/selected tenant. Client-supplied
+subject or tenant selectors cannot widen that scope. Collector/display credentials
+cannot call it. This grants no organization-wide export capability and never
+includes another user's records. Deleting an observation,
 repository attribution, or personal analytics removes or recomputes affected
 aggregates as appropriate; deleting an attribution preserves the usage as
 unattributed. Existing backup/restore and hosted deletion policies still apply.
 Disconnecting a collector stops future collection but does not silently delete
 previous history. Explain the distinction and provide an explicit deletion action.
 
+Hosted personal deletion uses the existing external authority in
+[ADR 0010](decisions/0010-external-key-and-audit-authority.md), not a new service.
+Before deletion is acknowledged, finalize a non-rollbackable tombstone outside
+the customer D1 backup lifecycle, scoped to tenant, personal subject, and stable
+observation IDs or the deleted collection generation, including affected bucket
+identities. Store only deletion selectors, not repository labels or usage content.
+Apply the existing recoverable receipt protocol so an interrupted deletion remains denied until reconciled.
+Deleting all history retires its collection generation and credentials; explicit
+re-enrollment permits new history without accepting replay from the retired one.
+
+Hosted restore applies authoritative personal tombstones before reopening any
+analytics reads, exports, ingestion, or aggregate publication. Remove deleted
+contributions and recompute affected totals; a restored aggregate cannot bypass
+this check even when its detailed rows have expired. If retained contribution
+evidence cannot safely rebuild a bucket, invalidate it and show its total as
+unavailable; never publish its pre-deletion value or a guessed replacement.
+Retain the deletion evidence needed for every restorable snapshot. Current reads and writes fail closed if
+fresh authority state is unavailable. Test restoring a pre-deletion snapshot for
+both observation deletion and whole-history deletion, including replay and new
+collection afterward. This prevents application-visible resurrection; it does
+not claim personal cryptographic erasure of old tenant-encrypted backups.
+Standalone restore retains its existing operator-controlled backup policy and
+must disclose when restoring an older backup would reintroduce deleted history;
+it does not depend on the private hosted authority.
+
 ## Acceptance gates
 
-Before this feature is called complete, the same SQLite/D1 contract and browser
-journeys must establish:
+Phase 4 establishes the standalone portions below on Node/SQLite and
+single-installation Workers/D1. Phase 5 adds the hosted tenant/global-identity
+bindings and external-authority deletion/restore cases; those hosted requirements
+do not block the standalone milestone. Both editions use the same personal
+accounting contracts and corresponding browser journeys:
 
 1. A supported usage source produces measured token totals, repository breakdowns,
    and daily/weekly/monthly views without transmitting forbidden content. An
@@ -172,9 +223,13 @@ journeys must establish:
 6. Retention and storage limits bound detailed and aggregate storage; transport
    compaction leaves retained analytics intact. Aggregate-only periods, expired
    correction evidence, deletion, export, backup, and restore behave as documented.
-7. A second user, collector credential, unassigned display, and hosted tenant
-   cannot read another user's repository names or analytics. No public report
-   contains personal repository identifiers.
+7. A second user, collector credential, and unassigned display cannot read or
+   write another user's personal analytics. Members/viewers can enroll their own
+   sources and export only their own records; administrator and payload subject
+   substitution cannot impersonate another user. Phase 5 additionally covers
+   cross-tenant access, one global identity in multiple organizations, membership
+   removal, and pre-deletion snapshot restoration under the external authority.
+   No public report contains personal repository identifiers.
 8. Upgrading from every supported schema preserves existing activity, usage,
    credentials, and unrelated data. Records lacking repository evidence remain
    unattributed. Already discarded observations are not claimed as backfilled.

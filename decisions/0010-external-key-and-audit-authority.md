@@ -15,6 +15,12 @@ property. This requirement does not exist for the single-tenant public product.
 The hosted edition uses a small separately administered authority outside the
 customer D1 backup lifecycle. It stores non-rollbackable tenant-key tombstones
 and authorization generations for membership and tenant lifecycle transitions.
+The same tombstone operations also protect hosted personal analytics deletion,
+scoped to tenant, personal subject, and observation IDs or collection generation,
+as defined in [Personal analytics](../PERSONAL_ANALYTICS.md). Personal reads,
+exports, ingestion, and restore apply those deletions before releasing data or
+publishing aggregates; authority outages fail closed. This adds no separate
+service and does not extend the authority dependency to standalone deployments.
 It issues monotonically sequenced authenticated receipts and retains replayable
 canonical records for every operations audit commit. Every operations action
 fails closed when the authority is unavailable. Access uses workload identity,
