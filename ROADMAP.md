@@ -249,6 +249,9 @@ content by default.
   resume, reconnect, and configurable managed, self-hosted, or loopback endpoint.
 - Cloudflare deployment connector and a provider-neutral host-health collector.
 - Provider-neutral work-session, usage-aggregate, and activity-event schemas.
+- [Personal analytics](PERSONAL_ANALYTICS.md): retained activity and usage,
+  repository attribution, daily/weekly/monthly views, source coverage, bounded
+  retention, export, and deletion.
 - Declarative attention rules for needs-input, failure, staleness, and usage
   thresholds, with acknowledged and resolved lifecycle.
 - Explicit privacy controls and redaction tests.
@@ -262,6 +265,12 @@ No adapter parses terminal output or human-facing prose, including as a fallback
 Duplicate and out-of-order submissions cannot regress state. Expired or revoked
 credentials, collector identity substitution, and unsupported record kinds are
 rejected on both deployments.
+
+The collector milestone also meets the
+[personal analytics acceptance gates](PERSONAL_ANALYTICS.md#acceptance-gates).
+Activity-only hook support is a partial capability, not completion of historical
+usage analytics. Repository attribution cannot be fabricated from account-level
+usage totals.
 
 Collector streams have byte and read-time limits, bounded batch counts,
 per-collector request rates, and configurable standalone retention/storage

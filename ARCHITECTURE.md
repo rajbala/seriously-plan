@@ -520,6 +520,15 @@ records, events, jobs, and exports—is encrypted under destructible per-tenant
 material, not merely provider-secret rows. Raw snapshot inspection after
 tombstoning must recover no customer content.
 
+## Personal analytics
+
+[Personal analytics](PERSONAL_ANALYTICS.md) extends the existing normalized
+work-session, usage-aggregate, and activity-event records through the same public
+collector SDK, authenticated queries, and SQLite/D1 adapters. It defines retained
+personal history and repository attribution independently of display replay
+retention and optional public reporting. It introduces neither a separate
+telemetry protocol nor a hosted-only analytics implementation.
+
 ## Optional public usage leaderboard
 
 The hosted service publishes separate leaderboards for hosted verified usage
