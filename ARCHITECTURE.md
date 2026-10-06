@@ -217,8 +217,12 @@ The standalone installation uses capability-based `owner`, `admin`, `member`,
 and `viewer` roles. Owner can manage users, role ownership, backup/restore, and
 installation settings; owner and admin can manage provider secrets,
 integrations, collectors, displays, and dashboards; member can operate existing
-integrations and edit dashboards; viewer is read-only. Every privileged route
+integrations and edit dashboards; viewer is read-only for shared installation
+resources. Every privileged route
 checks a named capability, and an actor cannot grant a capability it lacks.
+Personal analytics adds the narrow own-subject enrollment and export
+capabilities defined in [Personal analytics](PERSONAL_ANALYTICS.md). These do not
+grant general collector administration or access to another user's history.
 Installation invitations are short-lived, identity-bound, atomically single-use,
 and audited. Owner-count validation and mutation share a serialized transaction;
 the final owner cannot leave, be removed, or demote itself without an atomic
@@ -396,10 +400,12 @@ The initial role-to-capability policy is explicit:
 | Edit dashboards and widgets | yes | yes | yes | no |
 | Operate existing integrations | yes | yes | yes | no |
 | View or change integration settings and credentials | yes | yes | no | no |
-| Enroll or revoke displays and collectors | yes | yes | no | no |
+| Enroll or revoke organization displays and collectors | yes | yes | no | no |
+| Manage own subject-bound personal collectors | yes | yes | yes | yes |
+| View and export own personal analytics | yes | yes | yes | yes |
 | Invite, remove, or change members below owner | yes | yes | no | no |
 | Grant or revoke owner; transfer ownership | yes | no | no | no |
-| Manage billing, exports, deletion, and organization settings | yes | no | no | no |
+| Manage organization billing, exports, deletion, and settings | yes | no | no | no |
 
 Every route authorizes a named capability. Role assignment cannot grant a
 capability that the acting identity does not possess. Owner-count validation
@@ -519,6 +525,20 @@ Every purge-sensitive tenant row—including dashboards, normalized provider
 records, events, jobs, and exports—is encrypted under destructible per-tenant
 material, not merely provider-secret rows. Raw snapshot inspection after
 tombstoning must recover no customer content.
+
+## Personal analytics
+
+[Personal analytics](PERSONAL_ANALYTICS.md) extends the existing normalized
+work-session, usage-aggregate, and activity-event records through the same public
+collector SDK, authenticated queries, and SQLite/D1 adapters. It defines retained
+personal history and repository attribution independently of display replay
+retention and optional public reporting. It introduces neither a separate
+telemetry protocol nor a hosted-only analytics implementation. Credentials and
+queries bind to the authenticated personal subject and installation/tenant;
+organization roles do not grant another user's personal data. Hosted personal
+exports are separate from owner-only organization exports. Hosted personal
+deletion extends the existing external authority's tombstones and restore checks,
+as specified in the linked plan and ADR 0010.
 
 ## Optional public usage leaderboard
 

@@ -13,6 +13,7 @@ plan of Seriously. It is not intended for open-source publication.
 ## Documents
 
 - [North-star command-center scenario](PRODUCT_SCENARIO.md)
+- [Personal analytics and repository-attributed usage](PERSONAL_ANALYTICS.md)
 - [Product and architecture](ARCHITECTURE.md)
 - [Public/private repository boundary](REPOSITORY_BOUNDARIES.md)
 - [Delivery roadmap](ROADMAP.md)

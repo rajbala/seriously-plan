@@ -249,6 +249,9 @@ content by default.
   resume, reconnect, and configurable managed, self-hosted, or loopback endpoint.
 - Cloudflare deployment connector and a provider-neutral host-health collector.
 - Provider-neutral work-session, usage-aggregate, and activity-event schemas.
+- [Personal analytics](PERSONAL_ANALYTICS.md): retained activity and usage,
+  repository attribution, daily/weekly/monthly views, source coverage, bounded
+  retention, export, and deletion.
 - Declarative attention rules for needs-input, failure, staleness, and usage
   thresholds, with acknowledged and resolved lifecycle.
 - Explicit privacy controls and redaction tests.
@@ -262,6 +265,14 @@ No adapter parses terminal output or human-facing prose, including as a fallback
 Duplicate and out-of-order submissions cannot regress state. Expired or revoked
 credentials, collector identity substitution, and unsupported record kinds are
 rejected on both deployments.
+
+The collector milestone also meets the standalone portions of the
+[personal analytics acceptance gates](PERSONAL_ANALYTICS.md#acceptance-gates),
+including subject-bound enrollment and personal export for installation users.
+Hosted tenancy and external-authority deletion/restore cases belong to Phase 5.
+Activity-only hook support is a partial capability, not completion of historical
+usage analytics. Repository attribution cannot be fabricated from account-level
+usage totals.
 
 Collector streams have byte and read-time limits, bounded batch counts,
 per-collector request rates, and configurable standalone retention/storage
@@ -294,6 +305,8 @@ and use an isolated, metered Workers/D1 service.
 - Membership removal, session revocation, ownership transfer, and last-owner
   protection.
 - Tenant-scoped hosted repositories and composite schema constraints.
+- Hosted personal analytics: tenant/global-subject credential and export scope,
+  plus personal-deletion tombstones in the existing external authority.
 - Per-tenant encryption derivation.
 - Stripe billing at USD $5 per billable seat-month, versioned concurrent seat
   time, webhook reconciliation, grace, suspension, and deletion separation.
@@ -315,6 +328,12 @@ role matrix, including one user with different roles across organizations and
 attempts to grant capabilities the actor lacks. Removal terminates existing
 access. Concurrent leave, removal, demotion, and transfer requests preserve at
 least one owner on D1.
+
+The hosted portions of the [personal analytics gates](PERSONAL_ANALYTICS.md#acceptance-gates)
+prove isolation for one user across multiple organizations, own-subject enrollment
+and export for members/viewers, membership revocation, and restoration of
+pre-personal-deletion snapshots without resurrecting observations or aggregates.
+Authority outages deny affected reads, exports, and ingestion.
 
 Hosted authentication tests cover passkey enrollment and multiple credentials;
 email-link expiry, replay, verifier storage, and rate limits; delayed recovery
