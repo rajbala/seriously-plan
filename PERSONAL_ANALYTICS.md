@@ -60,8 +60,8 @@ grants access to another user's personal analytics.
 
 Activity-only hooks do not establish token usage. Before implementing a usage
 adapter, record the supported structured source, its documented fields and
-units, client coverage, required consent, and limitations. Supported provider
-APIs, SDKs, native structured usage events, or separately consented structured
+units, client coverage, enrollment disclosures, and limitations. Supported
+provider APIs, SDKs, native structured usage events, or supported structured
 usage metadata may supply usage. Terminal scraping, interpreting prose, reading
 conversation bodies, and estimating tokens from prompt length are prohibited.
 An adapter that reads structured usage metadata must filter locally and transmit
@@ -83,10 +83,18 @@ subtotal from supported sources is not presented as complete account usage.
 
 ## Repository attribution
 
-Repository naming is optional, explicit personal enrollment/configuration,
-separate from permission to report activity or token totals. Preview the metadata
-before enabling it. Never transmit absolute local paths, source contents,
-prompts, provider credentials, or credential-bearing Git remote URLs.
+Installing and connecting the Seriously plugin is the consent to collect the
+user's documented personal activity, usage, and repository metadata. Do not add
+a separate token-collection opt-in or repeated permission prompts. Explain the
+collected fields and source coverage in the existing installation/connection
+flow; bundle any required telemetry forwarder with the plugin so users keep
+launching their clients normally. Enrollment still selects the authenticated
+personal subject and destination and does not authorize conversation contents.
+
+Repository naming is optional configuration in that same flow, not a separate
+consent step. Show the configured repository identity so attribution is clear.
+Never transmit absolute local paths, source contents, prompts, provider
+credentials, or credential-bearing Git remote URLs.
 
 Use the existing normalized source/session identity and validated repository
 metadata. A hosted repository is identified by host and stable provider identity
