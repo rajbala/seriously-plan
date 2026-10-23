@@ -25,7 +25,10 @@ A third gap appeared in implementation. The operator-run native upgrade in
 `seriously` reads trust keys from a `release-trust.json` supplied with each
 release and does not compare them with the installed trust root, so every run
 can replace the root. The plan instead requires the updater to embed its
-verification keys.
+verification keys. *Since closed in `seriously`:* a signed installation is now
+held to the trust root recorded with it, the host updater never replaces it,
+and replacing it takes an explicit `--replace-trust`. The first two gaps
+remain.
 
 All three need key metadata signed by an offline root, with versions that
 clients persist and refuse to roll back, plus a freshness anchor for a client

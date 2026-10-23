@@ -28,6 +28,7 @@ Proposed decisions awaiting the owner:
 |---|---|
 | [0017](0017-client-sdk-languages.md) | Dart and Swift client SDKs stay experimental, outside the official TypeScript/Python/Go/Rust matrix. |
 | [0019](0019-offline-root-release-trust.md) | Release trust adopts TUF root, targets, snapshot and timestamp roles with an offline threshold root. |
+| [0020](0020-managed-oci-updates.md) | Managed OCI updates load a signed image archive through a host-side Compose updater sharing the native operation contract. |
 
 New consequential decisions should receive a separate numbered Markdown file
 describing context, decision, alternatives, consequences, and status. Amend a

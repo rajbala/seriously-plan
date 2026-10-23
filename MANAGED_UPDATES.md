@@ -196,37 +196,50 @@ instructions; repeated startup or button presses must not erase evidence.
 
 1. Public release/update schemas, compatibility rules, trust model, and shared
    valid/hostile fixtures; define the managed native and Compose support matrix.
-   **Partially delivered.** `seriously-cloud` implements the catalog half: the
-   wire contract, signed-envelope publication, the versioned check and manifest
-   endpoints and recorded check-ins (see its `docs/update-protocol.md`).
-   `seriously` now has the verifying half as `@seriously/updates`: envelope and
-   manifest decoding, signature verification, replay state per trust root, the
-   bootstrap floor and compatibility evaluation. Still open, and still owned by
-   `seriously` per [REPOSITORY_BOUNDARIES](REPOSITORY_BOUNDARIES.md): the public
-   normative contract and canonical schemas, one valid/hostile fixture corpus
-   that both implementations consume, and the managed native and Compose support
-   matrix. This slice does not close until those land.
+   **Delivered in `seriously`; the catalog adopts the corpus with the next
+   release.** `seriously` owns the normative contract (`docs/update-protocol.md`)
+   and publishes the valid/hostile corpus as
+   `@seriously/updates/update-fixtures.json`, which its own tests run; the
+   verifying half is `@seriously/updates`. `seriously-cloud` implements the
+   catalog half and carries the same cases until it consumes a release that
+   contains the corpus. The support matrix is `seriously`'s
+   `docs/host-updater.md`.
 2. React Router Framework Mode composition in `seriously-cloud`, private
    download authorization, CI publication of signed manifests, and a release
    page. No customer lifecycle routes. Framework Mode arrives with the rendered
    release page rather than ahead of it; the JSON resource API does not need it.
-   **Not started** beyond the JSON resource API: releases are published by an
-   operator's authenticated POST, and no download route exists.
+   **Partially delivered.** The catalog brokers private release downloads with
+   revocable, operator-issued download credentials and is deployable for its
+   operator alone, with the ADR 0016 check-in bounds and rate limits. Framework
+   Mode with a rendered release page, and CI publication of signed manifests,
+   remain: releases are published by an operator's authenticated POST.
 3. Owner-only Updates UI/API with installed build identity, explicit checking,
    scheduled check controls, stale/offline handling, and adapter capability display.
-   **Partially delivered:** owner-only, CSRF-protected explicit checks that verify
-   locally and report a failed check separately from the last success. Scheduled
-   checks, adapter capability display and release-index walking remain.
+   **Delivered.** Owner-only, CSRF-protected checks on demand and daily
+   (jitter, conditional requests, backoff, an owner toggle), verified locally
+   and reported separately from the last success; release-index walking for
+   intermediate releases; and the detected installation method with whether,
+   and otherwise how, the server installs a release.
 4. Narrow local updater and native/systemd execution with durable progress,
    verified backups, migrations, readiness and crash recovery; connect Update now.
-   **Not delivered.** A root-only, operator-run `deploy/upgrade-native.py
-   --release` installs a verified signed native release with rehearsed migration
-   and pre-start rollback. It is not the narrow updater: it has no local API,
-   Hub-visible progress, catalog download, pinned trust root or Update now, and
-   it accepts trust keys from an operator-supplied file on every run.
+   **Delivered for native systemd; the exit gate's genuine-release run
+   remains.** An operator opts in to a host updater (a path unit and a oneshot
+   root service). On Update now the Hub runs a fresh check, downloads the
+   release through the catalog's broker and checks its digest while still
+   serving, then hands it over. The updater verifies it again with the installed
+   runtime's own upgrade against the trust root recorded with the installed
+   release (now pinned; `--replace-trust` rotates it deliberately), stages and
+   rehearses migrations, stops, backs up and verifies, migrates, activates,
+   starts with readiness and confirms the running release, recording each stage
+   where the Hub reads it but cannot change it. Interrupted runs are settled by
+   the upgrade's recovery, including at boot; restores and updates exclude each
+   other. CI exercises it on a real systemd host with signed fixture releases,
+   including tampered and unconfirmed ones. Two genuine versioned releases
+   through the running catalog wait on cutting a release.
 5. Managed OCI execution using the same operation contract and recovery gates;
    installer registration, upgrade fixtures and user documentation.
-   **Not started.**
+   **Not started.** [ADR 0020](decisions/0020-managed-oci-updates.md) proposes
+   its design, after the native slice's review.
 
 Deliver each slice through reviewable PRs. Promote stacked drafts one at a time;
 merge only fresh Codex-approved heads with green required CI. Avoid duplicate CI
