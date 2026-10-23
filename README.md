@@ -37,6 +37,23 @@ plan of Seriously. It is not intended for open-source publication.
 
 ## Status
 
-Portable installation and onboarding are the current delivery focus. The next
-phase is [Phase 1.5 — managed updates](MANAGED_UPDATES.md), before resuming the
-remaining numbered roadmap. This sequencing does not waive their exit gates.
+As of October 2026:
+
+- **Phase 0** is complete and released privately as `v0.1.0-alpha.1`, the only
+  release so far.
+- **Phase 1** is implemented but not closed. Its exit-gate audit, clean private
+  installation acceptance and the deferred Windows verification remain; the
+  owner has deferred Windows, which the protected release policy still requires
+  for the next release.
+- Portable installation and onboarding have shipped. The current focus is
+  [Phase 1.5 — managed updates](MANAGED_UPDATES.md). Verification, read-only
+  owner checks and an operator-run signed native upgrade exist; scheduled checks,
+  the narrow host updater with **Update now**, the download broker and managed
+  OCI remain. The slice notes there carry the detail.
+- An interim [operational demo](decisions/0018-operational-demo-sequencing.md)
+  pulled narrow, demo-grade slices of Phases 2–4 forward. Those phases stay open
+  with unchanged exit gates.
+- `seriously-cloud` serves the release-catalog JSON API and holds an internal
+  hosted tenancy foundation for Phase 5; it has no customer surface.
+
+This sequencing does not waive any exit gate.

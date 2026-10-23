@@ -3,11 +3,13 @@
 Each phase is delivered through small pull requests and must pass its exit gate
 before the next phase becomes the primary focus.
 
-## Immediate next phase — Phase 1.5: managed updates
+## Current phase — Phase 1.5: managed updates
 
-After the current portable-installation/onboarding work, the next primary focus
-is [managed server updates](MANAGED_UPDATES.md), ahead of the remaining Phase 2
-work. Deliver owner-facing **Check for updates** and **Update now**, backed by a
+Portable installation and onboarding have shipped, so the primary focus is
+[managed server updates](MANAGED_UPDATES.md), ahead of the remaining Phase 2
+work. Phase 1 is implemented but not yet closed against its exit gate, and an
+interim [operational demo](decisions/0018-operational-demo-sequencing.md) has
+pulled demo-grade slices of Phases 2–4 forward without closing them. Deliver owner-facing **Check for updates** and **Update now**, backed by a
 minimal signed release catalog in `seriously-cloud` using React Router Framework
 Mode. Support managed native/systemd and a documented managed OCI installation;
 other deployment methods expose check/status and accurate manual instructions.

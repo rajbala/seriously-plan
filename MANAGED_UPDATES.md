@@ -196,24 +196,37 @@ instructions; repeated startup or button presses must not erase evidence.
 
 1. Public release/update schemas, compatibility rules, trust model, and shared
    valid/hostile fixtures; define the managed native and Compose support matrix.
-   **Partially delivered.** The wire contract, signed-envelope publication, the
-   versioned check and manifest endpoints and recorded check-ins now exist in
-   `seriously-cloud` (see its `docs/update-protocol.md`), written so the public
-   half can adopt them unchanged. Still open, and still owned by `seriously` per
-   [REPOSITORY_BOUNDARIES](REPOSITORY_BOUNDARIES.md): the public schema and
-   fixture packages, the portable verification and compatibility gates, and the
-   managed native and Compose support matrix. This slice does not close until
-   those land.
+   **Partially delivered.** `seriously-cloud` implements the catalog half: the
+   wire contract, signed-envelope publication, the versioned check and manifest
+   endpoints and recorded check-ins (see its `docs/update-protocol.md`).
+   `seriously` now has the verifying half as `@seriously/updates`: envelope and
+   manifest decoding, signature verification, replay state per trust root, the
+   bootstrap floor and compatibility evaluation. Still open, and still owned by
+   `seriously` per [REPOSITORY_BOUNDARIES](REPOSITORY_BOUNDARIES.md): the public
+   normative contract and canonical schemas, one valid/hostile fixture corpus
+   that both implementations consume, and the managed native and Compose support
+   matrix. This slice does not close until those land.
 2. React Router Framework Mode composition in `seriously-cloud`, private
    download authorization, CI publication of signed manifests, and a release
    page. No customer lifecycle routes. Framework Mode arrives with the rendered
    release page rather than ahead of it; the JSON resource API does not need it.
+   **Not started** beyond the JSON resource API: releases are published by an
+   operator's authenticated POST, and no download route exists.
 3. Owner-only Updates UI/API with installed build identity, explicit checking,
    scheduled check controls, stale/offline handling, and adapter capability display.
+   **Partially delivered:** owner-only, CSRF-protected explicit checks that verify
+   locally and report a failed check separately from the last success. Scheduled
+   checks, adapter capability display and release-index walking remain.
 4. Narrow local updater and native/systemd execution with durable progress,
    verified backups, migrations, readiness and crash recovery; connect Update now.
+   **Not delivered.** A root-only, operator-run `deploy/upgrade-native.py
+   --release` installs a verified signed native release with rehearsed migration
+   and pre-start rollback. It is not the narrow updater: it has no local API,
+   Hub-visible progress, catalog download, pinned trust root or Update now, and
+   it accepts trust keys from an operator-supplied file on every run.
 5. Managed OCI execution using the same operation contract and recovery gates;
    installer registration, upgrade fixtures and user documentation.
+   **Not started.**
 
 Deliver each slice through reviewable PRs. Promote stacked drafts one at a time;
 merge only fresh Codex-approved heads with green required CI. Avoid duplicate CI
