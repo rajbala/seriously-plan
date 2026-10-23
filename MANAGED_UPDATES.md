@@ -222,20 +222,25 @@ instructions; repeated startup or button presses must not erase evidence.
    and otherwise how, the server installs a release.
 4. Narrow local updater and native/systemd execution with durable progress,
    verified backups, migrations, readiness and crash recovery; connect Update now.
-   **Delivered for native systemd; the exit gate's genuine-release run
-   remains.** An operator opts in to a host updater (a path unit and a oneshot
-   root service). On Update now the Hub runs a fresh check, downloads the
-   release through the catalog's broker and checks its digest while still
-   serving, then hands it over. The updater verifies it again with the installed
-   runtime's own upgrade against the trust root recorded with the installed
-   release (now pinned; `--replace-trust` rotates it deliberately), stages and
-   rehearses migrations, stops, backs up and verifies, migrates, activates,
-   starts with readiness and confirms the running release, recording each stage
-   where the Hub reads it but cannot change it. Interrupted runs are settled by
-   the upgrade's recovery, including at boot; restores and updates exclude each
-   other. CI exercises it on a real systemd host with signed fixture releases,
-   including tampered and unconfirmed ones. Two genuine versioned releases
-   through the running catalog wait on cutting a release.
+   **Delivered for native systemd except a maintenance start; the exit gate's
+   genuine-release run remains.** An operator opts in to a host updater (a path
+   unit and a oneshot root service). On Update now the Hub runs a fresh check,
+   downloads the release through the catalog's broker and checks its digest
+   while still serving, then hands it over. The updater verifies it again with
+   the installed runtime's own upgrade against the trust root recorded with the
+   installed release (now pinned; `--replace-trust` rotates it deliberately),
+   stages and rehearses migrations, stops, backs up and verifies, migrates,
+   activates, starts with readiness and confirms the running release, recording
+   each stage where the Hub reads it but cannot change it. Interrupted runs are
+   settled by the upgrade's recovery, including at boot; restores and updates
+   exclude each other. CI exercises it on a real systemd host with signed
+   fixture releases, including tampered and unconfirmed ones. Two genuine
+   versioned releases through the running catalog wait on cutting a release. The
+   new version starts serving rather than in maintenance, so a readiness failure
+   after the start goes to an operator instead of the automatic recovery
+   required before writes reopen; the maintenance start that
+   [ADR 0020](decisions/0020-managed-oci-updates.md) proposes for both adapters
+   closes that gap.
 5. Managed OCI execution using the same operation contract and recovery gates;
    installer registration, upgrade fixtures and user documentation.
    **Not started.** [ADR 0020](decisions/0020-managed-oci-updates.md) proposes

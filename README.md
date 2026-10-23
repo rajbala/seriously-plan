@@ -48,9 +48,10 @@ As of October 2026:
 - Portable installation and onboarding have shipped. The current focus is
   [Phase 1.5 — managed updates](MANAGED_UPDATES.md). Verification, scheduled
   and on-demand owner checks, the catalog's download broker and native
-  **Update now** through an opt-in host updater exist; managed OCI, the rendered
-  release page, CI publication and the exit-gate run with two genuine releases
-  remain. The slice notes there carry the detail.
+  **Update now** through an opt-in host updater exist; managed OCI, a
+  maintenance start that keeps writes closed until a new version is confirmed
+  ready, the rendered release page, CI publication and the exit-gate run with
+  two genuine releases remain. The slice notes there carry the detail.
 - An interim [operational demo](decisions/0018-operational-demo-sequencing.md)
   pulled narrow, demo-grade slices of Phases 2–4 forward. Those phases stay open
   with unchanged exit gates.

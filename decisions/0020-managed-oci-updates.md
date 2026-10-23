@@ -54,12 +54,18 @@ its image locally.
   migrations by running the new image against a copy of the database in a
   scratch volume; stop `hub`; back up the data volume with the installed image
   into a root-only directory and verify the copy; migrate with the new image;
-  switch `.env` to the new image ID; start with the readiness check; confirm
-  the running image ID and release identity; record the outcome.
-- **Recovery.** A failure before the new version starts restores the volume copy
-  and the previous image ID and starts that. A schema-changing start keeps the
-  data and requires an operator, as native does. The previous image is kept
-  until the next successful update.
+  switch `.env` to the new image ID; start in maintenance with the readiness
+  check; confirm the running image ID and release identity; reopen writes;
+  record the outcome.
+- **Recovery.** The boundary is the reopening of writes, as the plan requires,
+  not the start of the new version. The new image starts in maintenance: it
+  answers readiness and reports its release identity but admits no writes, and
+  the updater reopens writes only after confirming both. A failure before then,
+  including a failed readiness or identity check, restores the verified backup
+  and the previous image ID under the existing restore fencing rules and starts
+  that. After writes reopen, going back is an explicit operator recovery with a
+  data-loss warning. The previous image is kept until the next successful
+  update.
 - **Scope.** Docker Engine with Compose v2 on Linux x86_64. Rootless Docker,
   Podman, Swarm and Kubernetes keep checks with instructions.
 
@@ -78,6 +84,10 @@ its image locally.
   the existing download route unchanged.
 - The Compose topology changes once, and existing Compose installations adopt it
   by hand before they can be managed.
+- The Hub needs a maintenance start that keeps writes closed until the updater
+  reopens them. Native lacks it today: it starts the new version serving, so a
+  readiness failure after the start goes to an operator. Native adopts the same
+  start, which brings both adapters to the plan's recovery boundary.
 - The exit gate gains a CI job with Docker that updates a Compose installation
   between two signed fixture releases, refusing tampered and unconfirmed ones
   and recovering from a release that cannot start, mirroring the native job.
