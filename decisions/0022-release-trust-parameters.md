@@ -87,8 +87,13 @@ so whatever CI re-signs daily must live in a separate environment.
   bundle: a connected machine exports the full metadata set, the target
   envelope and the artifact, and the operator carries it to the installation.
   The Hub verifies the bundle with the ordinary TUF workflow, freshness
-  included, so a bundle must be applied within seven days of export. An older
-  bundle is refused, and the operator exports a fresh one. There is no
+  included, so the bundle must be applied before the earliest expiry it
+  carries, across `root`, `targets`, `snapshot`, `timestamp` and the envelope.
+  Exporting does not renew any signature, and `timestamp` usually governs: a
+  bundle exported right after the daily re-signing has nearly seven days, and
+  one exported just before it about six. The exporter prints that deadline
+  and refuses to export when less than three days remain. A bundle past its
+  deadline is refused, and the operator exports a fresh one. There is no
   freshness bypass. Before the bundle tooling exists, an air-gapped
   installation reports that freshness cannot be established and offers no
   update, as ADR 0019 specifies.
@@ -132,7 +137,7 @@ so whatever CI re-signs daily must live in a separate environment.
   compromise there gets both keys anyway. One key halves the rotation work and
   loses nothing.
 - **No freshness bypass for air-gapped installations.** A bypass is the replay
-  that ADR 0019 exists to stop. Seven days is ample to carry a bundle.
+  that ADR 0019 exists to stop. Six days is ample to carry a bundle.
 - **Embed at the tag, check at publication.** Embedding at the tag keeps
   builds reproducible. TUF's chain walk is what makes an older embedded root
   safe, so the one thing to enforce is that the chain is unbroken, and the
