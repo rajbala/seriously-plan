@@ -146,9 +146,9 @@ compromised key.
 
 **Authenticated key metadata is a launch blocker, deliberately deferred.** Two
 gaps are known and recorded rather than solved: a key window is verified against
-the manifest's own `publishedAt`, which the signer chooses, so it does not bind a
-peer facing an impersonated catalog; and `revokedAt` protects a Hub only once it
-has *received* the revocation, for which no authenticated, versioned channel
+the manifest's own `publishedAt`, which the signer chooses, so it does not bind
+a peer facing an impersonated catalog; and `revokedAt` protects a Hub only once
+it has *received* the revocation, for which no authenticated, versioned channel
 exists. Together a retired-but-unrevoked key in an attacker's hands, combined
 with catalog impersonation, can mint releases a fresh installation accepts.
 Closing this needs key metadata signed by an offline root, carrying a version
@@ -157,7 +157,8 @@ that has never checked — the root and timestamp roles of The Update Framework.
 That is its own decision record and is not required to complete this phase, whose
 catalog is undeployed and whose installed base is empty. It **is** required before
 the catalog serves anyone outside the operator, and until it lands, key custody
-after retirement is an operational requirement rather than a formality. Release building/signing permissions are separate from ordinary
+after retirement is an operational requirement rather than a formality. Release
+building/signing permissions are separate from ordinary
 catalog serving. Keep the last accepted sequence durably, against the trust root
 that issued it; an old valid manifest cannot silently undo a newer release
 decision. A recovery restore is a distinct local
@@ -196,24 +197,55 @@ instructions; repeated startup or button presses must not erase evidence.
 
 1. Public release/update schemas, compatibility rules, trust model, and shared
    valid/hostile fixtures; define the managed native and Compose support matrix.
-   **Partially delivered.** The wire contract, signed-envelope publication, the
-   versioned check and manifest endpoints and recorded check-ins now exist in
-   `seriously-cloud` (see its `docs/update-protocol.md`), written so the public
-   half can adopt them unchanged. Still open, and still owned by `seriously` per
-   [REPOSITORY_BOUNDARIES](REPOSITORY_BOUNDARIES.md): the public schema and
-   fixture packages, the portable verification and compatibility gates, and the
-   managed native and Compose support matrix. This slice does not close until
-   those land.
+   **Delivered in `seriously`; the catalog adopts the corpus with the next
+   release.** `seriously` owns the normative contract (`docs/update-protocol.md`)
+   and publishes the valid/hostile corpus as
+   `@seriously/updates/update-fixtures.json`, which its own tests run; the
+   verifying half is `@seriously/updates`. `seriously-cloud` implements the
+   catalog half and carries the same cases until it consumes a release that
+   contains the corpus. The support matrix is `seriously`'s
+   `docs/host-updater.md`.
 2. React Router Framework Mode composition in `seriously-cloud`, private
    download authorization, CI publication of signed manifests, and a release
    page. No customer lifecycle routes. Framework Mode arrives with the rendered
    release page rather than ahead of it; the JSON resource API does not need it.
+   **Partially delivered.** The catalog brokers private release downloads with
+   revocable, operator-issued download credentials and is deployable for its
+   operator alone, with the ADR 0016 check-in bounds and rate limits. Framework
+   Mode with a rendered release page, and CI publication of signed manifests,
+   remain: releases are published by an operator's authenticated POST.
 3. Owner-only Updates UI/API with installed build identity, explicit checking,
    scheduled check controls, stale/offline handling, and adapter capability display.
+   **Delivered.** Owner-only, CSRF-protected checks on demand and daily
+   (jitter, conditional requests, backoff, an owner toggle), verified locally
+   and reported separately from the last success; release-index walking for
+   intermediate releases; and the detected installation method with whether,
+   and otherwise how, the server installs a release.
 4. Narrow local updater and native/systemd execution with durable progress,
    verified backups, migrations, readiness and crash recovery; connect Update now.
+   **Delivered for native systemd except a maintenance start; the exit gate's
+   genuine-release run remains.** An operator opts in to a host updater (a path
+   unit and a oneshot root service). On Update now the Hub runs a fresh check,
+   downloads the release through the catalog's broker and checks its digest
+   while still serving, then hands it over. The updater verifies it again with
+   the installed runtime's own upgrade against the trust root recorded with the
+   installed release (now pinned; `--replace-trust` rotates it deliberately),
+   stages and rehearses migrations, stops, backs up and verifies, migrates,
+   activates, starts with readiness and confirms the running release, recording
+   each stage where the Hub reads it but cannot change it. Interrupted runs are
+   settled by the upgrade's recovery, including at boot; restores and updates
+   exclude each other. CI exercises it on a real systemd host with signed
+   fixture releases, including tampered and unconfirmed ones. Two genuine
+   versioned releases through the running catalog wait on cutting a release. The
+   new version starts serving rather than in maintenance, so a readiness failure
+   after the start goes to an operator instead of the automatic recovery
+   required before writes reopen; the maintenance start that the accepted
+   [ADR 0020](decisions/0020-managed-oci-updates.md) requires of both adapters
+   closes that gap.
 5. Managed OCI execution using the same operation contract and recovery gates;
    installer registration, upgrade fixtures and user documentation.
+   **Not started.** Its design is the accepted
+   [ADR 0020](decisions/0020-managed-oci-updates.md).
 
 Deliver each slice through reviewable PRs. Promote stacked drafts one at a time;
 merge only fresh Codex-approved heads with green required CI. Avoid duplicate CI

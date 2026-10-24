@@ -1,0 +1,14 @@
+# Link checking for the docs workflow (PR_PROCESS.md, "Required checks").
+# Run locally with: lychee --offline .   (internal links and anchors only)
+#              or: lychee .             (also checks external links)
+
+include_fragments = "anchor-only"
+max_retries = 3
+retry_wait_time = 5
+timeout = 20
+accept = "200..=299, 429"
+
+exclude = [
+  # Sibling repositories are private, so anonymous checks return 404.
+  '^https://github\.com/rajbala/',
+]

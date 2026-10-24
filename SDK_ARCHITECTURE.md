@@ -61,6 +61,10 @@ The initial official language matrix is staged so neutrality is proven early:
 | Phase 6 | Add Rust clients and exercise the Lenovo display against the public display contract. |
 | Public launch | Support TypeScript, Python, Go, and Rust under one documented compatibility policy. |
 
+Experimental Dart (Flutter) and Swift (iOS) display SDKs also exist in the
+monorepo; [proposed ADR 0017](decisions/0017-client-sdk-languages.md) keeps them
+outside this matrix.
+
 Additional community languages use the same schemas, protocol fixtures, and
 conformance service. A language is called official only when maintainers own its
 release pipeline, security updates, compatibility matrix, examples, and minimum

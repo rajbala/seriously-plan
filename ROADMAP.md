@@ -3,11 +3,14 @@
 Each phase is delivered through small pull requests and must pass its exit gate
 before the next phase becomes the primary focus.
 
-## Immediate next phase — Phase 1.5: managed updates
+## Current phase — Phase 1.5: managed updates
 
-After the current portable-installation/onboarding work, the next primary focus
-is [managed server updates](MANAGED_UPDATES.md), ahead of the remaining Phase 2
-work. Deliver owner-facing **Check for updates** and **Update now**, backed by a
+Portable installation and onboarding have shipped, so the primary focus is
+[managed server updates](MANAGED_UPDATES.md), ahead of the remaining Phase 2
+work. Phase 1 is implemented but not yet closed against its exit gate, and an
+interim [operational demo](decisions/0018-operational-demo-sequencing.md) has
+pulled demo-grade slices of Phases 2–4 forward without closing them. Deliver
+owner-facing **Check for updates** and **Update now**, backed by a
 minimal signed release catalog in `seriously-cloud` using React Router Framework
 Mode. Support managed native/systemd and a documented managed OCI installation;
 other deployment methods expose check/status and accurate manual instructions.
@@ -91,7 +94,8 @@ expired, replayed, and concurrently redeemed invitations fail. Restoring an old
 backup advances the authentication epoch: all pre-restore sessions and machine
 credentials remain rejected and new credentials are explicitly issued on both
 adapters. Database and backup canaries prove raw session, display, collector,
-invitation, callback-state, and other bearer values are never stored.
+invitation, and other bearer values are never stored. Phase 1 has no OAuth
+flow, so the callback-state canary moves to Phase 2 with the first callback.
 Password canaries prove only unique salts and policy-compliant Argon2id
 verifiers are stored on both adapters; login, migration, parameter upgrade, and
 malformed-verifier tests fail safely. Account, source, and global login limits
@@ -115,8 +119,11 @@ cross-installation replay, and structurally valid row tampering before replacing
 live state. Restore tests prove old password and WebAuthn credentials cannot mint
 a session until the separately held deployment recovery capability establishes
 new owner credentials, rotates itself, and rejects replay on Node and Workers.
-Clock-driven tests enforce administrative idle and absolute session
-deadlines, rotation on renewal, and recent-authentication bounds on both runtimes.
+Standalone administrative browser sessions persist until sign-out,
+revocation, removal, or an authentication-epoch change, with no idle or
+absolute deadline; session tests prove each of those ends access.
+Clock-driven tests enforce rotation on renewal, the deadlines of
+non-persistent sessions, and recent-authentication bounds on both runtimes.
 WebAuthn fixtures reject reused or expired challenges, wrong RP IDs and origins,
 wrong ceremony types, absent required presence or verification, bad signatures,
 and counter rollback according to the cloned-authenticator policy.
@@ -170,8 +177,9 @@ overruns, and compression bombs terminate within resource bounds on both
 deployments without a partial checkpoint.
 Authorization callback tests reject expired, replayed, session-mismatched,
 installation/tenant-mismatched, and configuration-mismatched state on both
-adapters. Multi-page fixtures cover every GitHub record kind and deletion from a
-later page. CI rejects any GitHub App
+adapters, and database and backup canaries prove raw callback-state values are
+never stored. Multi-page fixtures cover every GitHub record kind and deletion
+from a later page. CI rejects any GitHub App
 permission outside the documented read-only allowlist. With webhooks suppressed,
 scheduled polling discovers updates and deletions. Polling and webhook jobs that
 start from the same provider state cannot commit out of generation order on
@@ -389,14 +397,15 @@ operations, tenant purge, and retention jobs, while linked corrections preserve
 the original record and tamper evidence verifies. Rewritten and internally
 re-chained D1 snapshots, including alteration of the newest record, fail against
 per-commit externally sequenced authenticated receipts. Authority outage and
-disaster-recovery tests fail every operations action closed and reject rollback of
-its generation. Step-up tests enforce a five-minute,
+disaster-recovery tests fail every operations action closed and reject rollback
+of its generation. Step-up tests enforce a five-minute,
 single-use assertion bound to actor, capability, target, request, and reason and
 reject stale, replayed, or substituted assertions.
 
 Fault injection at every audit prepare, intent, finalize, and apply boundary
 proves retries are idempotent, mutations are never applied and read-only results
-are never released without a final receipt, reservations can be aborted, and finalized-but-unapplied intents
+are never released without a final receipt, reservations can be aborted, and
+finalized-but-unapplied intents
 are recoverable without unexplained sequence gaps.
 
 Restore tests quarantine all externally mutating jobs and permit execution only

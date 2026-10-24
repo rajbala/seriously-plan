@@ -57,8 +57,8 @@ organization, machine, and connection generation to an ephemeral live transport.
 The first hosted router may use a Durable Object and the Node adapter may use an
 in-process WebSocket registry, but neither owns unrecoverable session state or
 pending commands. Connection loss is repaired from durable cursors and current
-state. R2 or any other object store is an optional private storage adapter, not a
-public protocol dependency.
+state. R2 or any other object store is an optional private storage adapter, not
+a public protocol dependency.
 
 ## Machine enrollment and identity
 
