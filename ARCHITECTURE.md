@@ -239,8 +239,11 @@ changing the existing role grants:
 |---|:---:|:---:|:---:|:---:|
 | `audience.policy.manage` — change member/team/organization disclosure policy | yes | no | no | no |
 | `display.assignment.manage` — assign an already permitted dashboard | yes | yes | no | no |
+| `personal.share.manage` — share one's own personal activity | own | own | own | own |
 
 Policy changes are installation settings; assignment cannot widen disclosure.
+"Own" means each person holds it only for their own personal connections; no
+role can exercise it for someone else.
 See [organization audiences](ORGANIZATION_CONNECTIONS.md) for the separate data
 scope authorization and deferred acceptance gates.
 
@@ -431,6 +434,7 @@ The initial role-to-capability policy is explicit:
 | Manage billing, exports, deletion, and organization settings | yes | no | no | no |
 | `audience.policy.manage` — deferred disclosure policy | yes | no | no | no |
 | `display.assignment.manage` — assign an already permitted dashboard | yes | yes | no | no |
+| `personal.share.manage` — share one's own personal activity | own | own | own | own |
 
 Every route authorizes a named capability. Role assignment cannot grant a
 capability that the acting identity does not possess. Owner-count validation
