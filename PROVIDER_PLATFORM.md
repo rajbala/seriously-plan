@@ -16,10 +16,11 @@ Phase 2 becomes the primary focus after two things close:
 2. the personal connection onboarding slice the roadmap places next.
 
 The Phase 1 exit gate also has one partial clause, G1, which needs real D1
-export evidence from a deployed Worker. Slice 6 needs a deployed, externally
-reachable Worker for webhook delivery anyway, so Phase 2 stands that Worker up
-first (slice 0) and closes G1 against it. Phase 1 stays formally open until
-then; the phase-order rule is not waived.
+export evidence from a deployed Worker. That work is under way separately.
+Slice 6 needs a deployed, externally reachable Worker for webhook delivery, so
+slice 0 reuses the Worker that closes G1 instead of standing up a second one.
+Phase 1 stays formally open until G1 closes; the phase-order rule is not
+waived.
 
 This phase is read-only toward GitHub. It adds no externally mutating provider
 action, no hosted GitHub App, no organization connections and no change to
@@ -52,13 +53,14 @@ session-authenticated route enters the request-level authorization and CSRF
 matrices (`tests/route-csrf-matrix.test.ts`) in the PR that adds it, not in a
 later sweep.
 
-### 0. Deployed Worker environment (owner setup, then G1)
+### 0. Deployed acceptance Worker (shared with G1)
 
 The owner creates a Cloudflare Worker and D1 database for acceptance, with a
 public hostname. Secrets and environments stay with the owner; sessions only
-document the steps and consume the result. Close Phase 1 G1 by running the
-backup and restore journey's export step against real D1 export. Slice 6 later
-uses the same hostname as the webhook endpoint.
+document the steps and consume the result. If the separate G1 work has already
+deployed one, Phase 2 adopts it; otherwise this slice deploys it and G1 runs
+its real D1 export evidence against it. Slice 6 later uses the same hostname as
+the webhook endpoint.
 
 ### 1. Provider SDK, checkpoints and contract-test kit
 
@@ -110,7 +112,7 @@ parallel.
 
 Replace the `gh` login with a GitHub App each installation registers for
 itself through GitHub's App manifest flow, per
-[ADR 0022](decisions/0022-per-installation-github-app.md). The versioned App
+[ADR 0023](decisions/0023-per-installation-github-app.md). The versioned App
 manifest declares only the read-only permissions the widgets need; CI fails on
 any permission outside the documented allowlist. The manifest code exchange
 and the installation setup redirect both carry authorization state that is
@@ -191,8 +193,8 @@ Why this order:
   have a polling job to race against.
 - **G24 rides with its first callback.** The owner moved it to Phase 2 because
   no OAuth flow existed; slice 4 introduces the first one.
-- **The Worker comes first** because it closes the last Phase 1 gap and is
-  needed for real webhook delivery; it costs the owner one setup session.
+- **The Worker comes first** because it is shared with the last Phase 1 gap
+  and is needed for real webhook delivery; one Worker serves both.
 - **Go is independent** of the provider work, so it should not wait on it.
 
 ## Repositories
@@ -257,11 +259,11 @@ open it with slice 1 so each slice updates its own rows.
 The owner asked for reasonable calls with the reasoning recorded; each can be
 reversed by editing this section.
 
-1. **Per-installation GitHub App via the manifest flow** (ADR 0022), rather
+1. **Per-installation GitHub App via the manifest flow** (ADR 0023), rather
    than a shared Seriously App or keeping personal access tokens.
 2. **No externally mutating GitHub actions in Phase 2.** The indeterminate
    outcome machinery is proven with a fixture provider.
 3. **Webhooks are optional on Node**, mandatory in the Worker acceptance run.
 4. **The demo `gh` path is removed in slice 5**, once App polling replaces it.
 5. **Go clients are a gate check (P2-21)** and run in parallel.
-6. **A deployed acceptance Worker is slice 0** and closes Phase 1 G1.
+6. **A deployed acceptance Worker is slice 0**, shared with the G1 work.

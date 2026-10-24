@@ -1,4 +1,4 @@
-# ADR 0022: Each self-hosted installation registers its own GitHub App
+# ADR 0023: Each self-hosted installation registers its own GitHub App
 
 Status: proposed with the [Phase 2 plan](../PROVIDER_PLATFORM.md); the owner
 may reverse it before slice 4 starts.
