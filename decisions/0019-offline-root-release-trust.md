@@ -105,7 +105,7 @@ retired-key fixtures.
 ## Follow-ups
 
 These details are left to the implementation, which must settle them before it
-lands:
+lands. [ADR 0022](0022-release-trust-parameters.md) settles all four.
 
 - **Role expiries.** Only `timestamp` has a stated expiry. Set the others so
   that no near-offline key becomes an online one: `root` at about one year,
