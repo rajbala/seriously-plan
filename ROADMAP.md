@@ -93,7 +93,8 @@ expired, replayed, and concurrently redeemed invitations fail. Restoring an old
 backup advances the authentication epoch: all pre-restore sessions and machine
 credentials remain rejected and new credentials are explicitly issued on both
 adapters. Database and backup canaries prove raw session, display, collector,
-invitation, callback-state, and other bearer values are never stored.
+invitation, and other bearer values are never stored. Phase 1 has no OAuth
+flow, so the callback-state canary moves to Phase 2 with the first callback.
 Password canaries prove only unique salts and policy-compliant Argon2id
 verifiers are stored on both adapters; login, migration, parameter upgrade, and
 malformed-verifier tests fail safely. Account, source, and global login limits
@@ -117,8 +118,11 @@ cross-installation replay, and structurally valid row tampering before replacing
 live state. Restore tests prove old password and WebAuthn credentials cannot mint
 a session until the separately held deployment recovery capability establishes
 new owner credentials, rotates itself, and rejects replay on Node and Workers.
-Clock-driven tests enforce administrative idle and absolute session
-deadlines, rotation on renewal, and recent-authentication bounds on both runtimes.
+Administrative browser sessions persist until sign-out, revocation, removal,
+or an authentication-epoch change, with no idle or absolute deadline; session
+tests prove each of those ends access. Clock-driven tests enforce rotation on
+renewal, the deadlines of non-persistent sessions, and recent-authentication
+bounds on both runtimes.
 WebAuthn fixtures reject reused or expired challenges, wrong RP IDs and origins,
 wrong ceremony types, absent required presence or verification, bad signatures,
 and counter rollback according to the cloned-authenticator policy.
@@ -172,8 +176,9 @@ overruns, and compression bombs terminate within resource bounds on both
 deployments without a partial checkpoint.
 Authorization callback tests reject expired, replayed, session-mismatched,
 installation/tenant-mismatched, and configuration-mismatched state on both
-adapters. Multi-page fixtures cover every GitHub record kind and deletion from a
-later page. CI rejects any GitHub App
+adapters, and database and backup canaries prove raw callback-state values are
+never stored. Multi-page fixtures cover every GitHub record kind and deletion
+from a later page. CI rejects any GitHub App
 permission outside the documented read-only allowlist. With webhooks suppressed,
 scheduled polling discovers updates and deletions. Polling and webhook jobs that
 start from the same provider state cannot commit out of generation order on
