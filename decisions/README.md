@@ -26,6 +26,7 @@ Accepted initial decisions:
 | [0020](0020-managed-oci-updates.md) | Managed OCI updates load a signed image archive through a host-side Compose updater sharing the native operation contract. |
 | [0021](0021-agent-connections-and-display-audiences.md) | Personal plugins and organization APIs feed separately authorized dashboard audiences. |
 | [0022](0022-release-trust-parameters.md) | Release trust uses a yearly 2-of-3 hardware root, 120-day targets, 7-day online roles, byte-identical mirrors and the root at the tag. |
+| [0023](0023-per-installation-github-app.md) | Proposed: each self-hosted installation registers its own read-only GitHub App through the manifest flow. |
 
 New consequential decisions should receive a separate numbered Markdown file
 describing context, decision, alternatives, consequences, and status. Amend a

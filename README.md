@@ -18,6 +18,7 @@ plan of Seriously. It is not intended for open-source publication.
 - [Public/private repository boundary](REPOSITORY_BOUNDARIES.md)
 - [Delivery roadmap](ROADMAP.md)
 - [Next phase: managed server updates](MANAGED_UPDATES.md)
+- [Phase 2: provider platform and GitHub](PROVIDER_PLATFORM.md)
 - [Deferred organization connections and display audiences](ORGANIZATION_CONNECTIONS.md)
 - [Engineering and extension standards](ENGINEERING_STANDARDS.md)
 - [Client SDK architecture](SDK_ARCHITECTURE.md)

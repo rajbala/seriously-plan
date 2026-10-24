@@ -177,6 +177,10 @@ backup, restore, and installation-setting operations.
 **Outcome:** the first protected integration produces useful live dashboard
 data.
 
+The [Phase 2 plan](PROVIDER_PLATFORM.md) splits this phase into reviewable
+slices, orders them, and maps each exit-gate clause, including the
+callback-state canary carried from Phase 1, to the slice that proves it.
+
 - Versioned provider SDK and contract-test kit.
 - Official Go display and collector clients generated from the canonical public
   contract, plus the language-neutral extension conformance harness.
@@ -223,6 +227,10 @@ HTTP maintenance triggers require narrow, revocable, hashed credentials and are
 rate bounded. Request-level tests for systemd/cron and Worker shapes reject
 missing, invalid, revoked, expired, and incorrectly scoped credentials without
 claiming work.
+
+The official Go display and collector clients pass the same cross-runtime
+protocol and streaming fixtures as TypeScript and Python, and the published
+extension conformance harness passes against the reference provider.
 
 ## Phase 3 — live displays
 
