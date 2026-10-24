@@ -49,7 +49,7 @@ collector payload. Existing unbound installation collectors cannot populate a
 member's personal history; require explicit personal re-enrollment. Rotation
 preserves the subject and revocation prevents further writes.
 
-The named `manage_own_personal_collectors` capability lets each active user,
+The named `personal.collector.manage` capability lets each active user,
 including members and viewers, enroll and revoke only their own personal sources.
 It does not grant integration administration or management of other collectors.
 An administrator cannot enroll a personal source as another user. In hosted
@@ -193,11 +193,13 @@ receives it only through a personal sharing grant. Installing or enrolling a
 collector does not grant analytics read access. Dashboard access or display
 assignment alone never selects a personal subject to query.
 
-A personal sharing grant is created and owned by the subject. It names one
-grantee user or display, the shared views and repositories, and an optional
-expiry, and is audited. The subject can revoke it at any time. Revocation
-advances the grant's generation, so in-flight reads authorized under the old
-generation fail and subscribed displays stop receiving that subject's data.
+A personal sharing grant is the subject's own `personal.share.manage` grant from
+[organization audiences](ORGANIZATION_CONNECTIONS.md); no other role can create
+it for them. For personal analytics it names one grantee user or display, the
+shared views and repositories, and an optional expiry, and is audited. The
+subject can narrow or revoke it at any time. Revocation advances the audience
+generation, so reads and display streams authorized under the old generation
+close under the established revocation bound.
 Grants never extend to export or deletion.
 
 Repository labels and breakdowns are personal data. Public leaderboard payloads
@@ -227,7 +229,7 @@ if that evidence has expired, reject the correction explicitly rather than
 incrementing an aggregate blindly. Never recreate expired history from a latest
 session state.
 
-The named `export_own_personal_analytics` capability is available to every
+The named `personal.analytics.export` capability is available to every
 active user, including members and viewers, through
 `GET /personal/analytics/export`. Reuse existing export serialization and
 delivery, but bind its query to the authenticated personal subject and
@@ -235,7 +237,7 @@ installation/selected tenant. Client-supplied subject or tenant selectors cannot
 widen that scope. Collector/display credentials cannot call it. This grants no
 organization-wide export capability and never includes another user's records.
 
-The named `delete_own_personal_analytics` capability is likewise available to
+The named `personal.analytics.delete` capability is likewise available to
 every active user and is bound the same way. It is distinct from organization
 deletion and grants nothing beyond the caller's own subject. Its routes are:
 
