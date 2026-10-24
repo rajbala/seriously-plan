@@ -1,4 +1,4 @@
-# ADR 0017: Separate agent connections from display audiences
+# ADR 0021: Separate agent connections from display audiences
 
 Status: accepted direction; organization implementation deferred.
 

@@ -262,11 +262,15 @@ attacker-triggered account lockout. A successful login rotates the session ID.
 Administrative sessions use host-only `Secure`, `HttpOnly`, appropriately
 `SameSite` cookies; credentials never enter URLs or Web Storage. Plain HTTP is
 permitted only by an explicit loopback development mode that cannot be enabled
-in production. The server caps administrative sessions at 24 hours absolute and
-30 minutes idle; deployments may shorten but not extend those limits. Activity
-cannot extend the absolute deadline. Sensitive operations require authentication
-within the preceding five minutes, renewal rotates the session identifier, and
-clock-driven expiry behaves identically on Node and Workers.
+in production. Standalone password and passkey logins create persistent
+browser sessions with no idle or absolute deadline; they end only at sign-out,
+revocation, membership removal, or an authentication-epoch change. Other
+administrative sessions, including hosted ones, are capped at 24 hours absolute
+and 30 minutes idle; deployments may shorten but not extend those limits, and
+activity cannot extend the absolute deadline. Sensitive operations require
+authentication within the preceding five minutes on every session, renewal
+rotates the session identifier, and clock-driven expiry of capped sessions
+behaves identically on Node and Workers.
 
 Session, display, collector, invitation, callback-state, and other bearer
 capabilities are high-entropy values disclosed once. Storage contains only a

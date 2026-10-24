@@ -1,0 +1,7 @@
+// Markdown formatting check run by the docs workflow (PR_PROCESS.md,
+// "Required checks"). Rules live in .markdownlint.jsonc.
+// Run locally with: npx markdownlint-cli2
+{
+  "globs": ["**/*.md"],
+  "ignores": ["node_modules/**"]
+}
