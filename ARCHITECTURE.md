@@ -230,20 +230,27 @@ The standalone installation uses capability-based `owner`, `admin`, `member`,
 and `viewer` roles. Owner can manage users, role ownership, backup/restore, and
 installation settings; owner and admin can manage provider secrets,
 integrations, collectors, displays, and dashboards; member can operate existing
-integrations and edit dashboards; viewer is read-only. Every privileged route
+integrations and edit dashboards; viewer is read-only for shared installation
+resources. Every privileged route
 checks a named capability, and an actor cannot grant a capability it lacks.
 The deferred organization-connection phase adds these named capabilities without
-changing the existing role grants:
+changing the existing role grants. Personal analytics adds the own-subject
+collector, export, and deletion capabilities defined in
+[Personal analytics](PERSONAL_ANALYTICS.md):
 
 | Standalone capability | Owner | Admin | Member | Viewer |
 |---|:---:|:---:|:---:|:---:|
 | `audience.policy.manage` — change member/team/organization disclosure policy | yes | no | no | no |
 | `display.assignment.manage` — assign an already permitted dashboard | yes | yes | no | no |
 | `personal.share.manage` — share one's own personal activity | own | own | own | own |
+| `personal.collector.manage` — enroll and revoke one's own personal sources | own | own | own | own |
+| `personal.analytics.export` — export one's own personal analytics | own | own | own | own |
+| `personal.analytics.delete` — delete one's own personal analytics | own | own | own | own |
 
 Policy changes are installation settings; assignment cannot widen disclosure.
-"Own" means each person holds it only for their own personal connections; no
-role can exercise it for someone else.
+"Own" means each person holds it only for their own personal connections and
+history; no role can exercise it for someone else. The personal analytics
+capabilities do not grant general collector administration.
 See [organization audiences](ORGANIZATION_CONNECTIONS.md) for the separate data
 scope authorization and deferred acceptance gates.
 
@@ -428,13 +435,16 @@ The initial role-to-capability policy is explicit:
 | Edit dashboards and widgets | yes | yes | yes | no |
 | Operate existing integrations | yes | yes | yes | no |
 | View or change integration settings and credentials | yes | yes | no | no |
-| Enroll or revoke displays and collectors | yes | yes | no | no |
+| Enroll or revoke organization displays and collectors | yes | yes | no | no |
+| Manage own subject-bound personal collectors | yes | yes | yes | yes |
+| View and export own personal analytics | yes | yes | yes | yes |
 | Invite, remove, or change members below owner | yes | yes | no | no |
 | Grant or revoke owner; transfer ownership | yes | no | no | no |
-| Manage billing, exports, deletion, and organization settings | yes | no | no | no |
+| Manage organization billing, exports, deletion, and settings | yes | no | no | no |
 | `audience.policy.manage` — deferred disclosure policy | yes | no | no | no |
 | `display.assignment.manage` — assign an already permitted dashboard | yes | yes | no | no |
 | `personal.share.manage` — share one's own personal activity | own | own | own | own |
+| `personal.collector.manage`, `personal.analytics.export`, `personal.analytics.delete` — own personal analytics | own | own | own | own |
 
 Every route authorizes a named capability. Role assignment cannot grant a
 capability that the acting identity does not possess. Owner-count validation
@@ -554,6 +564,20 @@ Every purge-sensitive tenant row—including dashboards, normalized provider
 records, events, jobs, and exports—is encrypted under destructible per-tenant
 material, not merely provider-secret rows. Raw snapshot inspection after
 tombstoning must recover no customer content.
+
+## Personal analytics
+
+[Personal analytics](PERSONAL_ANALYTICS.md) extends the existing normalized
+work-session, usage-aggregate, and activity-event records through the same public
+collector SDK, authenticated queries, and SQLite/D1 adapters. It defines retained
+personal history and repository attribution independently of display replay
+retention and optional public reporting. It introduces neither a separate
+telemetry protocol nor a hosted-only analytics implementation. Credentials and
+queries bind to the authenticated personal subject and installation/tenant;
+organization roles do not grant another user's personal data. Hosted personal
+exports are separate from owner-only organization exports. Hosted personal
+deletion extends the existing external authority's tombstones and restore checks,
+as specified in the linked plan and ADR 0010.
 
 ## Optional public usage leaderboard
 

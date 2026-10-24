@@ -5,7 +5,8 @@ Seriously exists first to answer, at a glance:
 - Which coding agents are working, finished, blocked, or waiting for me?
 - Which CI runs, pull-request reviews, and deployments have completed, and with
   what result?
-- What token usage and estimated spend have I accumulated today?
+- What token usage and estimated spend have I accumulated today and over time,
+  and which repositories account for it?
 - Which development and infrastructure machines are healthy?
 - What changed recently, and what needs my attention now?
 
@@ -71,6 +72,14 @@ Every record carries source identity, observation time, freshness, and stable
 external identity so updates deduplicate and stale observations cannot regress
 newer state.
 
+## Personal history and analytics
+
+[Personal analytics](PERSONAL_ANALYTICS.md) defines historical usage and activity,
+repository attribution, daily/weekly/monthly views, evidence and coverage,
+retention, export, deletion, and acceptance gates. Live session state does not
+replace history. Missing usage or attribution remains explicitly unavailable or
+unattributed, and personal analytics is part of the self-hosted product.
+
 ## Attention and evidence
 
 Attention is a declarative, user-configurable projection, not connector-specific
@@ -101,7 +110,9 @@ same normalized records. On Node/SQLite and Workers/D1 it must demonstrate:
 2. CI and review completion appear with correct status after webhook delivery
    and after missed-webhook polling reconciliation;
 3. deployment and host-health changes enter the unified recent feed;
-4. daily token totals and estimated spend reconcile across collectors;
+4. daily token totals and estimated spend reconcile across collectors, with
+   repository-attributed personal history meeting the
+   [personal analytics gates](PERSONAL_ANALYTICS.md#acceptance-gates);
 5. attention items open, acknowledge, and resolve deterministically;
 6. Wi-Fi loss, server restart, notification loss, and reconnect cause neither
    missed nor duplicated visible transitions; and
