@@ -118,11 +118,11 @@ cross-installation replay, and structurally valid row tampering before replacing
 live state. Restore tests prove old password and WebAuthn credentials cannot mint
 a session until the separately held deployment recovery capability establishes
 new owner credentials, rotates itself, and rejects replay on Node and Workers.
-Administrative browser sessions persist until sign-out, revocation, removal,
-or an authentication-epoch change, with no idle or absolute deadline; session
-tests prove each of those ends access. Clock-driven tests enforce rotation on
-renewal, the deadlines of non-persistent sessions, and recent-authentication
-bounds on both runtimes.
+Standalone administrative browser sessions persist until sign-out,
+revocation, removal, or an authentication-epoch change, with no idle or
+absolute deadline; session tests prove each of those ends access.
+Clock-driven tests enforce rotation on renewal, the deadlines of
+non-persistent sessions, and recent-authentication bounds on both runtimes.
 WebAuthn fixtures reject reused or expired challenges, wrong RP IDs and origins,
 wrong ceremony types, absent required presence or verification, bad signatures,
 and counter rollback according to the cloned-authenticator policy.
