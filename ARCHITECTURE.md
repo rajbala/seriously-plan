@@ -20,19 +20,25 @@ The system has four concepts:
 - **Display**: a read-only enrolled browser or kiosk assigned to dashboards.
 
 ```text
-GitHub / GitLab / AWS -------- provider -----------+
-                                                  |
-Codex / Claude Code --------- native plugin -------+
-                                                  |
-Agent provider workspace API - provider (planned) - Hub ---- browser
-                                                  |
-Optional managed local input - bridge ------------+-------- Cage display
+GitHub / GitLab / AWS ------------- provider -----------+
+                                                        |
+Agent provider workspace API ----- provider (planned) --+
+                                                        |
+Codex / Claude Code -- native plugin -- bridge -------- Hub ---- browser
+                                                        |
+                                                        +-------- Cage display
 ```
 
 Agent sources support two collection paths: individual native-plugin hooks and
-[organization server-side API connections](ORGANIZATION_CONNECTIONS.md). The latter
-and its audience policies are planned, not implemented. Collection authority,
-member visibility and display assignment are separate boundaries.
+[organization server-side API connections](ORGANIZATION_CONNECTIONS.md). The
+latter and its audience policies are planned, not implemented. A native plugin
+is the vendor adapter of [ADR 0014](decisions/0014-remote-control-ready-bridge.md):
+its hooks hand allowlisted events to the local bridge, which owns enrollment,
+machine identity and outbound delivery, so later control needs no second
+collection path. The plugin may install or start the bridge, but it never wraps
+or replaces the agent launcher. Optional IT-managed endpoint telemetry uses the
+same bridge. Collection authority, member visibility and display assignment are
+separate boundaries.
 
 ## Runtime stack
 
