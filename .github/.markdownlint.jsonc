@@ -1,0 +1,5 @@
+{
+  "extends": "../.markdownlint.jsonc",
+  // The PR template is pasted into a PR body under GitHub's own title.
+  "MD041": false
+}
