@@ -22,6 +22,7 @@ Accepted initial decisions:
 | [0016](0016-update-protocol-and-check-in-records.md) | Releases are identified by ordered version plus git build identity; check-ins are recorded and identification stays optional. |
 | [0018](0018-operational-demo-sequencing.md) | An interim operational demo pulled bounded slices of Phases 2–4 forward without closing them. |
 | [0020](0020-managed-oci-updates.md) | Managed OCI updates load a signed image archive through a host-side Compose updater sharing the native operation contract. |
+| [0021](0021-agent-connections-and-display-audiences.md) | Personal plugins and organization APIs feed separately authorized dashboard audiences. |
 
 Proposed decisions awaiting the owner:
 

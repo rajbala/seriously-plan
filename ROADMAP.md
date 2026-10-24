@@ -24,6 +24,32 @@ scope. The linked specification defines five reviewable slices and the exit gate
 Existing numbered phases retain their scope; Phase 6 still requires the broader
 Node/SQLite and Workers/D1 supported-version upgrade matrix.
 
+## Next focus — personal connection onboarding
+
+After Phase 1.5 exits, complete the owner-requested personal native-plugin hook
+installation slice as an onboarding correction, ahead of the remaining Phase 2
+work: ordinary agent launch without a wrapper, inspectable local filtering,
+revocable enrollment without daily manual renewal, and documented
+client/platform coverage. The plugin is the vendor adapter; it delivers through
+the collector enrollment and ingestion protocol, which evolves into the bridge
+under [ADR 0014](decisions/0014-remote-control-ready-bridge.md). This slice pulls
+forward only the Phase 4 parts it needs: versioned enrollment and ingestion,
+narrow revocable collector credentials, collector-scoped idempotency and
+sequence handling, and privacy redaction tests. It does not start organization
+APIs or waive any numbered phase's exit gate. Portable-installation verification
+still applies.
+
+**Exit gate:** on both deployments, a Codex or Claude Code session started
+normally, with no wrapper launcher, reports allowlisted activity metadata
+through the installed plugin. Prompt, source, terminal-output and transcript
+canaries injected into hook payloads are absent from transmitted requests,
+stored records, logs and diagnostics. Expired or revoked enrollment credentials
+and collector identity substitution are rejected, and the plugin keeps working
+across restarts without a daily replacement download. Duplicate and
+out-of-order submissions cannot regress state. Inspecting the installed plugin
+shows the local filter, and removing it stops collection. The remaining Phase 4
+exit-gate items still apply when Phase 4 is delivered.
+
 ## Phase 0 — foundations and contracts
 
 **Outcome:** both implementation repositories have reproducible builds and a
@@ -301,6 +327,17 @@ captured traffic contain only consented aggregates; signatures, sequences,
 idempotency, correction windows, revocation, deletion, rate limits, and hostile
 payloads are enforced. Hosted, provider-verified, and self-reported entries are
 visibly distinct, and estimated spend identifies its versioned price snapshot.
+
+## Organization connections — deferred follow-on
+
+After Phase 4's exit gate passes, deliver [organization API connections and
+display audiences](ORGANIZATION_CONNECTIONS.md). Its gate depends on Phase 4's
+ingestion protocol, Codex and Claude Code collectors, normalized activity
+schemas and deduplication, and on a working personal native-plugin dashboard.
+An administrator connects once; server-side policies control own-member, team
+and organization aggregates and separately assigned displays. Its private
+hosted-tenant acceptance runs once Phase 5 provides hosted tenancy. This is
+recorded future scope, not an expansion of the hook-installation work.
 
 ## Phase 5 — hosted private beta
 

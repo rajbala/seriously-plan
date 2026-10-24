@@ -18,6 +18,7 @@ plan of Seriously. It is not intended for open-source publication.
 - [Public/private repository boundary](REPOSITORY_BOUNDARIES.md)
 - [Delivery roadmap](ROADMAP.md)
 - [Next phase: managed server updates](MANAGED_UPDATES.md)
+- [Deferred organization connections and display audiences](ORGANIZATION_CONNECTIONS.md)
 - [Engineering and extension standards](ENGINEERING_STANDARDS.md)
 - [Client SDK architecture](SDK_ARCHITECTURE.md)
 - [Remote-control-ready architecture](REMOTE_CONTROL.md)
@@ -53,6 +54,11 @@ As of October 2026:
   maintenance start that keeps writes closed until a new version is confirmed
   ready, the rendered release page, CI publication and the exit-gate run with
   two genuine releases remain. The slice notes there carry the detail.
+- Personal-account native-plugin hook installation is the next onboarding
+  correction after Phase 1.5: normal agent launch, inspectable hooks and
+  revocable enrollment without daily manual renewal. Organization API
+  connections and display audiences are
+  [deferred](ORGANIZATION_CONNECTIONS.md).
 - An interim [operational demo](decisions/0018-operational-demo-sequencing.md)
   pulled narrow, demo-grade slices of Phases 2–4 forward. Those phases stay open
   with unchanged exit gates.
