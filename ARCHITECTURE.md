@@ -20,12 +20,25 @@ The system has four concepts:
 - **Display**: a read-only enrolled browser or kiosk assigned to dashboards.
 
 ```text
-GitHub / GitLab / AWS ---- provider ----+
-                                        |
-Codex / Claude Code ---- bridge ------- Hub ---- browser
-                                        |
-                                        +-------- Cage display
+GitHub / GitLab / AWS ------------- provider -----------+
+                                                        |
+Agent provider workspace API ----- provider (planned) --+
+                                                        |
+Codex / Claude Code -- native plugin -- bridge -------- Hub ---- browser
+                                                        |
+                                                        +-------- Cage display
 ```
+
+Agent sources support two collection paths: individual native-plugin hooks and
+[organization server-side API connections](ORGANIZATION_CONNECTIONS.md). The
+latter and its audience policies are planned, not implemented. A native plugin
+is the vendor adapter of [ADR 0014](decisions/0014-remote-control-ready-bridge.md):
+its hooks hand allowlisted events to the local bridge, which owns enrollment,
+machine identity and outbound delivery, so later control needs no second
+collection path. The plugin may install or start the bridge, but it never wraps
+or replaces the agent launcher. Optional IT-managed endpoint telemetry uses the
+same bridge. Collection authority, member visibility and display assignment are
+separate boundaries.
 
 ## Runtime stack
 
@@ -219,6 +232,21 @@ installation settings; owner and admin can manage provider secrets,
 integrations, collectors, displays, and dashboards; member can operate existing
 integrations and edit dashboards; viewer is read-only. Every privileged route
 checks a named capability, and an actor cannot grant a capability it lacks.
+The deferred organization-connection phase adds these named capabilities without
+changing the existing role grants:
+
+| Standalone capability | Owner | Admin | Member | Viewer |
+|---|:---:|:---:|:---:|:---:|
+| `audience.policy.manage` — change member/team/organization disclosure policy | yes | no | no | no |
+| `display.assignment.manage` — assign an already permitted dashboard | yes | yes | no | no |
+| `personal.share.manage` — share one's own personal activity | own | own | own | own |
+
+Policy changes are installation settings; assignment cannot widen disclosure.
+"Own" means each person holds it only for their own personal connections; no
+role can exercise it for someone else.
+See [organization audiences](ORGANIZATION_CONNECTIONS.md) for the separate data
+scope authorization and deferred acceptance gates.
+
 Installation invitations are short-lived, identity-bound, atomically single-use,
 and audited. Owner-count validation and mutation share a serialized transaction;
 the final owner cannot leave, be removed, or demote itself without an atomic
@@ -404,6 +432,9 @@ The initial role-to-capability policy is explicit:
 | Invite, remove, or change members below owner | yes | yes | no | no |
 | Grant or revoke owner; transfer ownership | yes | no | no | no |
 | Manage billing, exports, deletion, and organization settings | yes | no | no | no |
+| `audience.policy.manage` — deferred disclosure policy | yes | no | no | no |
+| `display.assignment.manage` — assign an already permitted dashboard | yes | yes | no | no |
+| `personal.share.manage` — share one's own personal activity | own | own | own | own |
 
 Every route authorizes a named capability. Role assignment cannot grant a
 capability that the acting identity does not possess. Owner-count validation
