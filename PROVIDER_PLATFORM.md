@@ -16,11 +16,11 @@ Phase 2 becomes the primary focus after two things close:
 2. the personal connection onboarding slice the roadmap places next.
 
 The Phase 1 exit gate also has one partial clause, G1, which needs real D1
-export evidence from a deployed Worker. That work is under way separately.
-Slice 6 needs a deployed, externally reachable Worker for webhook delivery, so
-slice 0 reuses the Worker that closes G1 instead of standing up a second one.
-Phase 1 stays formally open until G1 closes; the phase-order rule is not
-waived.
+export evidence. The G1 work closes it with a throwaway D1 database and needs
+no persistent Worker. Slice 6 does need a deployed, externally reachable
+Worker for webhook delivery, so slice 0 owns that deployment, and the G1
+evidence's optional second tier reuses it. Phase 1 stays formally open until
+G1 closes; the phase-order rule is not waived.
 
 This phase is read-only toward GitHub. It adds no externally mutating provider
 action, no hosted GitHub App, no organization connections and no change to
@@ -53,14 +53,16 @@ session-authenticated route enters the request-level authorization and CSRF
 matrices (`tests/route-csrf-matrix.test.ts`) in the PR that adds it, not in a
 later sweep.
 
-### 0. Deployed acceptance Worker (shared with G1)
+### 0. Deployed acceptance Worker
 
-The owner creates a Cloudflare Worker and D1 database for acceptance, with a
-public hostname. Secrets and environments stay with the owner; sessions only
-document the steps and consume the result. If the separate G1 work has already
-deployed one, Phase 2 adopts it; otherwise this slice deploys it and G1 runs
-its real D1 export evidence against it. Slice 6 later uses the same hostname as
-the webhook endpoint.
+The owner deploys a persistent Cloudflare Worker and D1 database with a
+public hostname through the guided deployment in `seriously`'s
+`docs/portable-deployment.md`, and picks its name and hostname. Secrets and
+environments stay with the owner; sessions only document the steps and
+consume the result. The same Worker runs tier 2 of `docs/d1-export-evidence.md`
+(the backup and restore journey on a real deployment), so one acceptance
+Worker serves both that and Phase 2. Slice 6 later uses its hostname as the
+webhook endpoint.
 
 ### 1. Provider SDK, checkpoints and contract-test kit
 
@@ -193,8 +195,8 @@ Why this order:
   have a polling job to race against.
 - **G24 rides with its first callback.** The owner moved it to Phase 2 because
   no OAuth flow existed; slice 4 introduces the first one.
-- **The Worker comes first** because it is shared with the last Phase 1 gap
-  and is needed for real webhook delivery; one Worker serves both.
+- **The Worker comes first** because real webhook delivery and the live
+  scenario need it, and the G1 evidence's second tier can reuse it at once.
 - **Go is independent** of the provider work, so it should not wait on it.
 
 ## Repositories
@@ -266,4 +268,4 @@ reversed by editing this section.
 3. **Webhooks are optional on Node**, mandatory in the Worker acceptance run.
 4. **The demo `gh` path is removed in slice 5**, once App polling replaces it.
 5. **Go clients are a gate check (P2-21)** and run in parallel.
-6. **A deployed acceptance Worker is slice 0**, shared with the G1 work.
+6. **Slice 0 owns the persistent acceptance Worker**; G1 tier 2 reuses it.
