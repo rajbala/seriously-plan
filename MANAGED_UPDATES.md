@@ -154,7 +154,9 @@ with catalog impersonation, can mint releases a fresh installation accepts.
 Closing this needs key metadata signed by an offline root, carrying a version
 clients persist and refuse to roll back, plus a freshness anchor for a client
 that has never checked — the root and timestamp roles of The Update Framework.
-[ADR 0019](decisions/0019-offline-root-release-trust.md), accepted, decides it;
+[ADR 0019](decisions/0019-offline-root-release-trust.md), accepted, decides it,
+and [ADR 0022](decisions/0022-release-trust-parameters.md) sets its expiries,
+root custody, mirror freshness and bootstrap rules;
 it is not required to complete this phase, whose
 catalog is undeployed and whose installed base is empty. It **is** required before
 the catalog serves anyone outside the operator, and until it lands, key custody
