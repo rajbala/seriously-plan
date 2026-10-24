@@ -157,7 +157,8 @@ that has never checked — the root and timestamp roles of The Update Framework.
 That is its own decision record and is not required to complete this phase, whose
 catalog is undeployed and whose installed base is empty. It **is** required before
 the catalog serves anyone outside the operator, and until it lands, key custody
-after retirement is an operational requirement rather than a formality. Release building/signing permissions are separate from ordinary
+after retirement is an operational requirement rather than a formality. Release
+building/signing permissions are separate from ordinary
 catalog serving. Keep the last accepted sequence durably, against the trust root
 that issued it; an old valid manifest cannot silently undo a newer release
 decision. A recovery restore is a distinct local

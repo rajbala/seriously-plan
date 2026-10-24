@@ -9,7 +9,8 @@ Portable installation and onboarding have shipped, so the primary focus is
 [managed server updates](MANAGED_UPDATES.md), ahead of the remaining Phase 2
 work. Phase 1 is implemented but not yet closed against its exit gate, and an
 interim [operational demo](decisions/0018-operational-demo-sequencing.md) has
-pulled demo-grade slices of Phases 2–4 forward without closing them. Deliver owner-facing **Check for updates** and **Update now**, backed by a
+pulled demo-grade slices of Phases 2–4 forward without closing them. Deliver
+owner-facing **Check for updates** and **Update now**, backed by a
 minimal signed release catalog in `seriously-cloud` using React Router Framework
 Mode. Support managed native/systemd and a documented managed OCI installation;
 other deployment methods expose check/status and accurate manual instructions.
@@ -379,7 +380,8 @@ reject stale, replayed, or substituted assertions.
 
 Fault injection at every audit prepare, intent, finalize, and apply boundary
 proves retries are idempotent, mutations are never applied and read-only results
-are never released without a final receipt, reservations can be aborted, and finalized-but-unapplied intents
+are never released without a final receipt, reservations can be aborted, and
+finalized-but-unapplied intents
 are recoverable without unexplained sequence gaps.
 
 Restore tests quarantine all externally mutating jobs and permit execution only
