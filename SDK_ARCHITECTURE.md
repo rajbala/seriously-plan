@@ -62,7 +62,7 @@ The initial official language matrix is staged so neutrality is proven early:
 | Public launch | Support TypeScript, Python, Go, and Rust under one documented compatibility policy. |
 
 Experimental Dart (Flutter) and Swift (iOS) display SDKs also exist in the
-monorepo; [proposed ADR 0017](decisions/0017-client-sdk-languages.md) keeps them
+monorepo; [ADR 0017](decisions/0017-client-sdk-languages.md) keeps them
 outside this matrix.
 
 Additional community languages use the same schemas, protocol fixtures, and

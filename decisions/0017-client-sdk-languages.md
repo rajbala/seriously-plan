@@ -2,9 +2,8 @@
 
 ## Status
 
-Proposed for the owner's decision. It records SDKs that already exist in
-`seriously` and recommends how to classify them; it changes nothing until
-accepted.
+Accepted on 2026-10-24, as proposed. The owner delegated the call. It records
+SDKs that already exist in `seriously` and classifies them.
 
 ## Context
 
@@ -28,7 +27,7 @@ schema keywords; Swift uses Apple's OpenAPI generator), run the shared protocol
 fixtures in their own CI workflows, and label themselves unpublished and
 experimental. Neither covers collector submission. No Go or Rust SDK exists.
 
-## Decision (proposed)
+## Decision
 
 Dart and Swift are **experimental community-tier** SDKs, not official ones.
 
