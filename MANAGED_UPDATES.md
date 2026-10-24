@@ -146,9 +146,9 @@ compromised key.
 
 **Authenticated key metadata is a launch blocker, deliberately deferred.** Two
 gaps are known and recorded rather than solved: a key window is verified against
-the manifest's own `publishedAt`, which the signer chooses, so it does not bind a
-peer facing an impersonated catalog; and `revokedAt` protects a Hub only once it
-has *received* the revocation, for which no authenticated, versioned channel
+the manifest's own `publishedAt`, which the signer chooses, so it does not bind
+a peer facing an impersonated catalog; and `revokedAt` protects a Hub only once
+it has *received* the revocation, for which no authenticated, versioned channel
 exists. Together a retired-but-unrevoked key in an attacker's hands, combined
 with catalog impersonation, can mint releases a fresh installation accepts.
 Closing this needs key metadata signed by an offline root, carrying a version

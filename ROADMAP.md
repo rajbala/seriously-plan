@@ -373,8 +373,8 @@ operations, tenant purge, and retention jobs, while linked corrections preserve
 the original record and tamper evidence verifies. Rewritten and internally
 re-chained D1 snapshots, including alteration of the newest record, fail against
 per-commit externally sequenced authenticated receipts. Authority outage and
-disaster-recovery tests fail every operations action closed and reject rollback of
-its generation. Step-up tests enforce a five-minute,
+disaster-recovery tests fail every operations action closed and reject rollback
+of its generation. Step-up tests enforce a five-minute,
 single-use assertion bound to actor, capability, target, request, and reason and
 reject stale, replayed, or substituted assertions.
 
