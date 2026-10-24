@@ -265,7 +265,9 @@ content by default.
 - Explicit privacy controls and redaction tests.
 - Collector health and last-seen status.
 - Collector-scoped idempotency keys and monotonic sequence handling.
-- Opt-in aggregate token metering and signed self-hosted leaderboard reporting.
+- Opt-in signed self-hosted leaderboard reporting of aggregate token metering.
+  The opt-in governs public publication only; personal token collection follows
+  the plugin-connection consent in [personal analytics](PERSONAL_ANALYTICS.md).
 
 **Exit gate:** a workstation can report session state to either deployment; no
 prompt, source, terminal output, or transcript is transmitted by default.
