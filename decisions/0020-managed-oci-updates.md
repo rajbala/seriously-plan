@@ -2,10 +2,10 @@
 
 ## Status
 
-Proposed for the owner's decision. It shapes slice 5 of
-[MANAGED_UPDATES](../MANAGED_UPDATES.md). It reuses the operation contract the
-native host updater established in `seriously`, so it should follow that
-slice's review rather than precede it.
+Accepted by the owner on 2026-10-24, as proposed. It shapes slice 5 of
+[MANAGED_UPDATES](../MANAGED_UPDATES.md) and the maintenance start that the
+native adapter adopts with it. It reuses the operation contract the native
+host updater established in `seriously`.
 
 ## Context
 
@@ -28,7 +28,7 @@ A Compose installation keeps its data in the named volume `seriously-data`,
 runs the Hub as an unprivileged user without capabilities, and today builds
 its image locally.
 
-## Decision (proposed)
+## Decision
 
 - **Artifact.** A release carries an OCI image archive for linux/x86_64
   (`seriously-oci-linux-x86_64.tar`) as a private release asset, described in

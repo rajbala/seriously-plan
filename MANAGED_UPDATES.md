@@ -239,13 +239,13 @@ instructions; repeated startup or button presses must not erase evidence.
    versioned releases through the running catalog wait on cutting a release. The
    new version starts serving rather than in maintenance, so a readiness failure
    after the start goes to an operator instead of the automatic recovery
-   required before writes reopen; the maintenance start that
-   [ADR 0020](decisions/0020-managed-oci-updates.md) proposes for both adapters
+   required before writes reopen; the maintenance start that the accepted
+   [ADR 0020](decisions/0020-managed-oci-updates.md) requires of both adapters
    closes that gap.
 5. Managed OCI execution using the same operation contract and recovery gates;
    installer registration, upgrade fixtures and user documentation.
-   **Not started.** [ADR 0020](decisions/0020-managed-oci-updates.md) proposes
-   its design, after the native slice's review.
+   **Not started.** Its design is the accepted
+   [ADR 0020](decisions/0020-managed-oci-updates.md).
 
 Deliver each slice through reviewable PRs. Promote stacked drafts one at a time;
 merge only fresh Codex-approved heads with green required CI. Avoid duplicate CI
