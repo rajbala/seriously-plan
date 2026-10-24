@@ -87,8 +87,10 @@ so whatever CI re-signs daily must live in a separate environment.
   bundle: a connected machine exports the full metadata set, the target
   envelope and the artifact, and the operator carries it to the installation.
   The Hub verifies the bundle with the ordinary TUF workflow, freshness
-  included, so the bundle must be applied before the earliest expiry it
-  carries, across `root`, `targets`, `snapshot`, `timestamp` and the envelope.
+  included, so the bundle must be applied before the earliest expiry among
+  the newest `root`, `targets`, `snapshot`, `timestamp` and the envelope. Older
+  roots ride along for the chain walk and, as TUF specifies, may be expired,
+  so they never shorten the deadline.
   Exporting does not renew any signature, and `timestamp` usually governs: a
   bundle exported right after the daily re-signing has nearly seven days, and
   one exported just before it about six. The exporter prints that deadline
