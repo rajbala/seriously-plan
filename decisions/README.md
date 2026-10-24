@@ -20,16 +20,11 @@ Accepted initial decisions:
 | [0014](0014-remote-control-ready-bridge.md) | An outbound bridge and durable command boundary are reserved now; control is deferred. |
 | [0015](0015-managed-server-updates.md) | Managed server updates use a minimal cloud release catalog and constrained local updaters. |
 | [0016](0016-update-protocol-and-check-in-records.md) | Releases are identified by ordered version plus git build identity; check-ins are recorded and identification stays optional. |
+| [0017](0017-client-sdk-languages.md) | Dart and Swift client SDKs stay experimental, outside the official TypeScript/Python/Go/Rust matrix. |
 | [0018](0018-operational-demo-sequencing.md) | An interim operational demo pulled bounded slices of Phases 2–4 forward without closing them. |
+| [0019](0019-offline-root-release-trust.md) | Release trust adopts TUF root, targets, snapshot and timestamp roles with an offline threshold root. |
 | [0020](0020-managed-oci-updates.md) | Managed OCI updates load a signed image archive through a host-side Compose updater sharing the native operation contract. |
 | [0021](0021-agent-connections-and-display-audiences.md) | Personal plugins and organization APIs feed separately authorized dashboard audiences. |
-
-Proposed decisions awaiting the owner:
-
-| ID | Proposal |
-|---|---|
-| [0017](0017-client-sdk-languages.md) | Dart and Swift client SDKs stay experimental, outside the official TypeScript/Python/Go/Rust matrix. |
-| [0019](0019-offline-root-release-trust.md) | Release trust adopts TUF root, targets, snapshot and timestamp roles with an offline threshold root. |
 
 New consequential decisions should receive a separate numbered Markdown file
 describing context, decision, alternatives, consequences, and status. Amend a

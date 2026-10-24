@@ -2,7 +2,8 @@
 
 ## Status
 
-Proposed for the owner's decision. It answers the launch blocker recorded in
+Accepted on 2026-10-24, as proposed, with the follow-ups below. The owner
+delegated the call. It answers the launch blocker recorded in
 [MANAGED_UPDATES](../MANAGED_UPDATES.md) and the two open gaps of
 [ADR 0016](0016-update-protocol-and-check-in-records.md). It is not required
 for an operator-only catalog. It is required before the catalog serves anyone
@@ -35,7 +36,7 @@ clients persist and refuse to roll back, plus a freshness anchor for a client
 that has never checked. These are the root and timestamp roles of The Update
 Framework (TUF).
 
-## Decision (proposed)
+## Decision
 
 Adopt the TUF 1.0 metadata model for release trust, through a maintained
 implementation rather than a hand-written subset.
@@ -100,3 +101,22 @@ as TUF targets, so no published release is re-signed. Once accepted, the
 "authenticated key metadata" launch blocker in MANAGED_UPDATES closes when
 this lands and is tested, including withheld-root, rolled-back-timestamp and
 retired-key fixtures.
+
+## Follow-ups
+
+These details are left to the implementation, which must settle them before it
+lands:
+
+- **Role expiries.** Only `timestamp` has a stated expiry. Set the others so
+  that no near-offline key becomes an online one: `root` at about one year,
+  renewed by ceremony; `targets` long enough to span a release cadence and
+  re-signed with each release; `snapshot` with `timestamp` in CI. An expired
+  `root` or `targets` is a fail-closed check outcome, like an expired
+  `timestamp`.
+- **Root threshold.** Record the root key count and threshold (for example two
+  of three), who holds each key, and how a lost key is replaced.
+- **Mirrors.** A configured mirror must relay the TUF metadata unchanged and
+  stay fresh enough for the `timestamp` window; document what an air-gapped
+  installation does when it cannot.
+- **Bootstrap.** Define which root a build embeds when a key rotation happens
+  between its tag and its publication.
