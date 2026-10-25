@@ -7,6 +7,10 @@ follow-ups that [ADR 0019](0019-offline-root-release-trust.md) left to the
 implementation, which must follow these values or amend this record. It does
 not change ADR 0019's decision.
 
+[ADR 0024](0024-root-keys-without-hardware-tokens.md) amends the custody
+rules below: root keys no longer have to be hardware tokens, and may be
+sealed key files or keys in any signer that never exports them.
+
 ## Context
 
 ADR 0019 adopts the TUF 1.0 roles for release trust and fixes one number: the
@@ -52,11 +56,11 @@ so whatever CI re-signs daily must live in a separate environment.
 
 - **Three keys, two to sign.** One lost key does not stop a rotation, and one
   stolen key cannot sign a root.
-- **Hardware only.** Each key is generated on its own hardware token and cannot
-  be exported, so no copy exists to leak. Root keys use ECDSA P-256 (TUF's
-  `ecdsa-sha2-nistp256`), because that is what PIV tokens and the PKCS#11
-  signer in `python-tuf`'s `securesystemslib` support widely. Release and online
-  keys stay Ed25519.
+- **Hardware only** (amended by ADR 0024). Each key is generated on its own
+  hardware token and cannot be exported, so no copy exists to leak. Root keys
+  use ECDSA P-256 (TUF's `ecdsa-sha2-nistp256`), because that is what PIV
+  tokens and the PKCS#11 signer in `python-tuf`'s `securesystemslib` support
+  widely. Release and online keys stay Ed25519.
 - **Holders.** The owner holds all three keys, in separate places: one with
   them, one in a home safe and one off-site, such as a safe-deposit box. With
   one owner, handing a key to someone else adds a person to trust but no
