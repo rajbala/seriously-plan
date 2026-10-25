@@ -261,8 +261,9 @@ open it with slice 1 so each slice updates its own rows.
 The owner asked for reasonable calls with the reasoning recorded; each can be
 reversed by editing this section.
 
-1. **Per-installation GitHub App via the manifest flow** (ADR 0023), rather
-   than a shared Seriously App or keeping personal access tokens.
+1. **Per-installation GitHub App via the manifest flow** (ADR 0023, accepted
+   2026-10-25), rather than a shared Seriously App or keeping personal access
+   tokens.
 2. **No externally mutating GitHub actions in Phase 2.** The indeterminate
    outcome machinery is proven with a fixture provider.
 3. **Webhooks are optional on Node**, mandatory in the Worker acceptance run.
