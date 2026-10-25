@@ -1,7 +1,10 @@
 # ADR 0023: Each self-hosted installation registers its own GitHub App
 
-Status: proposed with the [Phase 2 plan](../PROVIDER_PLATFORM.md); the owner
-may reverse it before slice 4 starts.
+## Status
+
+Accepted on 2026-10-25. The owner delegated the call; it was proposed with the
+[Phase 2 plan](../PROVIDER_PLATFORM.md) and is accepted as proposed when slice
+4 starts. The owner can still reverse it by superseding this record.
 
 ## Context
 
